@@ -5,7 +5,7 @@ import type { Task } from "@db/schema";
 
 const COLUMNS = [
   { id: "todo", title: "To Do" },
-  { id: "in_progress", title: "In Progress" },
+  { id: "in-progress", title: "In Progress" },
   { id: "blocked", title: "Blocked" },
   { id: "done", title: "Done" },
 ];
@@ -17,9 +17,8 @@ interface ProjectBoardProps {
 export function ProjectBoard({ projectId }: ProjectBoardProps) {
   const { tasks, updateTask } = useTasks(projectId);
 
-  const sanitizeStatus = (status: string) => status.replace('-', '_');
   const getTasksByStatus = (status: string) =>
-    tasks?.filter((task) => sanitizeStatus(task.status) === status)
+    tasks?.filter((task) => task.status === status)
       .sort((a, b) => a.order - b.order) || [];
 
   const calculateNewOrder = (result: any, getTasksByStatus: (status: string) => any[]) => {
@@ -46,7 +45,7 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
     updateTask({
       taskId: task.id,
       updates: {
-        status: result.destination.droppableId.replace('_', '-'),
+        status: result.destination.droppableId,
         order: calculateNewOrder(result, getTasksByStatus),
       },
     });
