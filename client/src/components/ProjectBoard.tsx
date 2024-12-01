@@ -1,8 +1,9 @@
-import { DragDropContext, Droppable, DropResult } from "react-beautiful-dnd";
+import { DragDropContext, DropResult } from "react-beautiful-dnd";
 import { TaskCard } from "./TaskCard";
 import { useTasks } from "../hooks/use-tasks";
 import type { Task } from "@db/schema";
 import { useState } from "react";
+import StrictModeDroppable from "./StrictModeDroppable";
 
 const COLUMNS = [
   { id: "todo", title: "To Do" },
@@ -78,7 +79,7 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
                 {getTasksByStatus(column.id).length}
               </span>
             </h2>
-            <Droppable droppableId={column.id} type="TASK">
+            <StrictModeDroppable droppableId={column.id} type="TASK">
               {(provided, snapshot) => (
                 <div
                   ref={provided.innerRef}
@@ -93,7 +94,7 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
                   {provided.placeholder}
                 </div>
               )}
-            </Droppable>
+            </StrictModeDroppable>
           </div>
         ))}
       </div>

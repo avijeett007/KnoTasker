@@ -64,7 +64,7 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
             <div className="space-y-2">
               <Label>Created</Label>
               <div className="text-sm text-muted-foreground">
-                {format(new Date(task.createdAt), "MMM d, yyyy")}
+                {format(new Date(task.createdAt || new Date()), "MMM d, yyyy")}
               </div>
             </div>
           </div>
@@ -75,7 +75,7 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
             <Label>Description</Label>
             {isEditing ? (
               <Textarea
-                value={editedTask.description}
+                value={editedTask.description || ""}
                 onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
                 rows={4}
               />
