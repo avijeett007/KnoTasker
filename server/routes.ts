@@ -1,8 +1,26 @@
 import { Express } from "express";
 import { setupAuth } from "./auth";
 import { db } from "../db";
-import { projects, tasks, comments, projectTypes, projectMembers, projectInvites, users } from "@db/schema";
+import { projects, tasks, comments, projectTypes, projectMembers, projectInvites, users, files } from "@db/schema";
 import { eq } from "drizzle-orm";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+const storage = multer.diskStorage({
+  destination: "./uploads",
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage });
+
+// Create uploads directory if it doesn't exist
+if (!fs.existsSync("./uploads")) {
+  fs.mkdirSync("./uploads");
+}
 
 export function registerRoutes(app: Express) {
   setupAuth(app);
@@ -230,5 +248,38 @@ export function registerRoutes(app: Express) {
       .where(eq(projectMembers.projectId, parseInt(req.params.projectId)));
 
     res.json({ message: "Member removed successfully" });
+  });
+
+  // File Upload Routes
+  app.post("/api/tasks/:taskId/files", upload.single("file"), async (req, res) => {
+    if (!req.user) return res.status(401).send("Unauthorized");
+    if (!req.file) return res.status(400).send("No file uploaded");
+
+    const [file] = await db.insert(files)
+      .values({
+        taskId: parseInt(req.params.taskId),
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+        uploadedById: req.user.id,
+      })
+      .returning();
+
+    res.json(file);
+  });
+
+  app.get("/api/tasks/:taskId/files", async (req, res) => {
+    if (!req.user) return res.status(401).send("Unauthorized");
+    
+    const taskFiles = await db.select().from(files)
+      .where(eq(files.taskId, parseInt(req.params.taskId)));
+    
+    res.json(taskFiles);
+  });
+
+  app.get("/api/files/:filename", async (req, res) => {
+    if (!req.user) return res.status(401).send("Unauthorized");
+    res.download(path.join("./uploads", req.params.filename));
   });
 }

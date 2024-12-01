@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import { Task } from "@db/schema";
 import { useTasks } from "../hooks/use-tasks";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Download } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface TaskDialogProps {
@@ -53,6 +53,44 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
   const { updateTask } = useTasks(task.projectId!);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const { data: files = [] } = useQuery({
+    queryKey: ["files", task.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/tasks/${task.id}/files`);
+      if (!response.ok) throw new Error("Failed to fetch files");
+      return response.json();
+    },
+  });
+
+  const uploadFile = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const response = await fetch(`/api/tasks/${task.id}/files`, {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!response.ok) throw new Error("Failed to upload file");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["files", task.id] });
+      toast({
+        title: "Success",
+        description: "File uploaded successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to upload file",
+        variant: "destructive",
+      });
+    },
+  });
 
   const { data: comments = [] } = useQuery({
     queryKey: ["comments", task.id],
@@ -208,8 +246,31 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
           <div className="space-y-2">
             <Label>Attachments</Label>
             <div className="border rounded-lg p-4">
-              <Input type="file" className="mb-2" disabled />
-              <p className="text-sm text-muted-foreground">File attachments coming soon</p>
+              <Input
+                type="file"
+                className="mb-2"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadFile.mutate(file);
+                }}
+                disabled={uploadFile.isPending}
+              />
+              <div className="grid grid-cols-1 gap-2">
+                {files.map((file) => (
+                  <div key={file.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                    <span className="text-sm truncate">{file.originalName}</span>
+                    <a
+                      href={`/api/files/${file.filename}`}
+                      download={file.originalName}
+                      className="ml-2"
+                    >
+                      <Button variant="ghost" size="icon">
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </a>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

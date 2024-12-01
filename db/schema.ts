@@ -103,3 +103,20 @@ export type InsertProjectMember = z.infer<typeof insertProjectMemberSchema>;
 
 export type ProjectInvite = z.infer<typeof selectProjectInviteSchema>;
 export type InsertProjectInvite = z.infer<typeof insertProjectInviteSchema>;
+
+export const files = pgTable("files", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  taskId: integer("task_id").references(() => tasks.id).notNull(),
+  filename: text("filename").notNull(),
+  originalName: text("original_name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull(),
+  uploadedById: integer("uploaded_by_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertFileSchema = createInsertSchema(files);
+export const selectFileSchema = createSelectSchema(files);
+
+export type File = z.infer<typeof selectFileSchema>;
+export type InsertFile = z.infer<typeof insertFileSchema>;
