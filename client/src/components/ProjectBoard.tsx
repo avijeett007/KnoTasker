@@ -55,15 +55,9 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-6">
         {COLUMNS.map((column) => (
-          <div key={column.id} className="bg-muted/30 rounded-lg p-4 min-h-[500px]">
-            <h2 className="font-semibold mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-primary"></span>
-              {column.title}
-              <span className="ml-auto text-muted-foreground text-sm">
-                {getTasksByStatus(column.id).length}
-              </span>
-            </h2>
-            <Droppable droppableId={column.id} type="TASK">
+          <div key={column.id} className="bg-muted/30 rounded-lg p-4">
+            <h2 className="font-semibold mb-4">{column.title}</h2>
+            <Droppable droppableId={column.id}>
               {(provided, snapshot) => (
                 <div
                   ref={provided.innerRef}
@@ -72,7 +66,7 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
                     snapshot.isDraggingOver ? 'bg-muted/50' : ''
                   }`}
                 >
-                  {getTasksByStatus(column.id).map((task: Task, index: number) => (
+                  {getTasksByStatus(column.id).map((task, index) => (
                     <TaskCard key={task.id} task={task} index={index} />
                   ))}
                   {provided.placeholder}
