@@ -19,7 +19,7 @@ export function TaskCard({ task, index }: TaskCardProps) {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
         >
-          <Card className="mb-3 hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing">
+          <Card className="mb-3 hover:shadow-md transition-all cursor-grab active:cursor-grabbing active:shadow-lg active:scale-[1.02] hover:border-primary/50">
             <CardHeader className="pb-2">
               <h3 className="font-semibold text-lg">{task.title}</h3>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">

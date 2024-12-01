@@ -5,7 +5,7 @@ import type { Task } from "@db/schema";
 
 const COLUMNS = [
   { id: "todo", title: "To Do" },
-  { id: "in-progress", title: "In Progress" },
+  { id: "in_progress", title: "In Progress" },
   { id: "blocked", title: "Blocked" },
   { id: "done", title: "Done" },
 ];
