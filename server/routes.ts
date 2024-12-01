@@ -22,6 +22,29 @@ if (!fs.existsSync("./uploads")) {
   fs.mkdirSync("./uploads");
 }
 
+async function checkProjectAccess(
+  req: Express.Request,
+  projectId: number,
+  requiredRole?: "owner" | "admin" | "member"
+) {
+  if (!req.user) return false;
+  
+  const [member] = await db.select()
+    .from(projectMembers)
+    .where(eq(projectMembers.projectId, projectId))
+    .where(eq(projectMembers.userId, req.user.id));
+
+  if (!member) return false;
+  
+  if (requiredRole) {
+    if (requiredRole === "owner") return member.role === "owner";
+    if (requiredRole === "admin") return ["owner", "admin"].includes(member.role);
+    return true; // member role can do basic operations
+  }
+  
+  return true;
+}
+
 export function registerRoutes(app: Express) {
   setupAuth(app);
 
@@ -86,6 +109,10 @@ export function registerRoutes(app: Express) {
 
   app.post("/api/projects/:projectId/tasks", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
+    
+    const hasAccess = await checkProjectAccess(req, parseInt(req.params.projectId), "member");
+    if (!hasAccess) return res.status(403).send("Insufficient permissions");
+    
     const { title, description, status, order } = req.body;
     const [task] = await db.insert(tasks)
       .values({
@@ -102,18 +129,30 @@ export function registerRoutes(app: Express) {
 
   app.patch("/api/tasks/:taskId", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
-    const { title, description, status, order } = req.body;
-    const [task] = await db.update(tasks)
+    
+    const [task] = await db.select()
+      .from(tasks)
+      .where(eq(tasks.id, parseInt(req.params.taskId)))
+      .limit(1);
+      
+    if (!task) return res.status(404).send("Task not found");
+    
+    const hasAccess = await checkProjectAccess(req, task.projectId, "member");
+    if (!hasAccess) return res.status(403).send("Insufficient permissions");
+    
+    const { title, description, status, order, assignedToId } = req.body;
+    const [updatedTask] = await db.update(tasks)
       .set({ 
         title: title || undefined,
         description: description || null,
         status: status || undefined,
         order: order || undefined,
+        assignedToId: assignedToId,
         updatedAt: new Date() 
       })
       .where(eq(tasks.id, parseInt(req.params.taskId)))
       .returning();
-    res.json(task);
+    res.json(updatedTask);
   });
 
   // Comments

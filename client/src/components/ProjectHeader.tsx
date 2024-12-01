@@ -6,7 +6,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Plus, MoreVertical } from "lucide-react";
+import { Plus, MoreVertical, Users } from "lucide-react";
+import { ProjectTeamDialog } from "./ProjectTeamDialog";
 import {
   Dialog,
   DialogContent,
@@ -25,6 +26,7 @@ interface ProjectHeaderProps {
 
 export function ProjectHeader({ project }: ProjectHeaderProps) {
   const [isNewTaskDialogOpen, setIsNewTaskDialogOpen] = useState(false);
+  const [isTeamDialogOpen, setIsTeamDialogOpen] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDescription, setNewTaskDescription] = useState("");
   const { createTask } = useTasks(project.id);
@@ -54,6 +56,10 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
           <p className="text-sm opacity-90">{project.description}</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setIsTeamDialogOpen(true)} className="mr-2">
+            <Users className="h-4 w-4 mr-2" />
+            Team
+          </Button>
           <Dialog open={isNewTaskDialogOpen} onOpenChange={setIsNewTaskDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -95,6 +101,11 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
           </DropdownMenu>
         </div>
       </div>
+      <ProjectTeamDialog
+        projectId={project.id}
+        isOpen={isTeamDialogOpen}
+        onClose={() => setIsTeamDialogOpen(false)}
+      />
     </div>
   );
 }

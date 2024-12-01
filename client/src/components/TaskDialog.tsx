@@ -1,17 +1,18 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
-import { useState, useEffect } from "react";
-import { Button } from "./ui/button";
-import { Textarea } from "./ui/textarea";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Separator } from "./ui/separator";
-import { format } from "date-fns";
-import { Task } from "@db/schema";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import type { Task } from "@db/schema";
 import { useTasks } from "../hooks/use-tasks";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Download } from "lucide-react";
+import { Loader2, Download, User } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { useState } from "react";
 
 interface TaskDialogProps {
   task: Task;
@@ -21,58 +22,27 @@ interface TaskDialogProps {
 
 export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTask, setEditedTask] = useState<Task>(() => ({
-    id: task.id,
-    title: task.title,
-    description: task.description || "",
-    status: task.status || "todo",
-    projectId: task.projectId,
-    assignedToId: task.assignedToId,
-    createdById: task.createdById,
-    createdAt: task.createdAt,
-    updatedAt: task.updatedAt,
-    order: task.order
-  }));
-
-  useEffect(() => {
-    setEditedTask({
-      id: task.id,
-      title: task.title,
-      description: task.description || "",
-      status: task.status || "todo",
-      projectId: task.projectId,
-      assignedToId: task.assignedToId,
-      createdById: task.createdById,
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt,
-      order: task.order
-    });
-  }, [task]);
-  const [comment, setComment] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const { updateTask } = useTasks(task.projectId!);
+  const [comment, setComment] = useState("");
+  const [editedTask, setEditedTask] = useState({
+    title: task.title,
+    description: task.description,
+    status: task.status,
+    assignedToId: task.assignedToId,
+  });
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const { data: files = [] } = useQuery({
-    queryKey: ["files", task.id],
-    queryFn: async () => {
-      const response = await fetch(`/api/tasks/${task.id}/files`);
-      if (!response.ok) throw new Error("Failed to fetch files");
-      return response.json();
-    },
-  });
+  const { updateTask } = useTasks(task.projectId);
 
   const uploadFile = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append("file", file);
-      
       const response = await fetch(`/api/tasks/${task.id}/files`, {
         method: "POST",
         body: formData,
       });
-      
       if (!response.ok) throw new Error("Failed to upload file");
       return response.json();
     },
@@ -92,6 +62,15 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
     },
   });
 
+  const { data: files = [] } = useQuery({
+    queryKey: ["files", task.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/tasks/${task.id}/files`);
+      if (!response.ok) throw new Error("Failed to fetch files");
+      return response.json();
+    },
+  });
+
   const { data: comments = [] } = useQuery({
     queryKey: ["comments", task.id],
     queryFn: async () => {
@@ -99,6 +78,15 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
       if (!response.ok) throw new Error("Failed to fetch comments");
       return response.json();
     },
+  });
+
+  const { data: members = [] } = useQuery({
+    queryKey: ["project-members", task.projectId],
+    queryFn: async () => {
+      const response = await fetch(`/api/projects/${task.projectId}/members`);
+      if (!response.ok) throw new Error("Failed to fetch members");
+      return response.json();
+    }
   });
 
   const addComment = useMutation({
@@ -146,6 +134,7 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
           title: editedTask.title.trim(),
           description: editedTask.description?.trim() || null,
           status: editedTask.status || "todo",
+          assignedToId: editedTask.assignedToId,
         },
       });
       
@@ -214,6 +203,46 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
                   <SelectItem value="in-progress">In Progress</SelectItem>
                   <SelectItem value="blocked">Blocked</SelectItem>
                   <SelectItem value="done">Done</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Assignee</Label>
+              <Select
+                value={editedTask.assignedToId?.toString() || ""}
+                onValueChange={(value) => {
+                  const assignedToId = value ? parseInt(value) : null;
+                  setEditedTask({ ...editedTask, assignedToId });
+                  if (!isEditing) {
+                    updateTask({ 
+                      taskId: task.id, 
+                      updates: { assignedToId } 
+                    });
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Unassigned" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      <span>Unassigned</span>
+                    </div>
+                  </SelectItem>
+                  {members.map((member) => (
+                    <SelectItem key={member.userId} value={member.userId.toString()}>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback>
+                            {member.username[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{member.username}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
