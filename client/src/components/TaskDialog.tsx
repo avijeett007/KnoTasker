@@ -102,7 +102,7 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
 
     setIsSaving(true);
     try {
-      const result = await updateTask({
+      await updateTask({
         taskId: task.id,
         updates: {
           title: editedTask.title.trim(),
@@ -111,13 +111,12 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
         },
       });
       
-      setEditedTask(result);
       setIsEditing(false);
       toast({
         title: "Success",
         description: "Task updated successfully",
       });
-      onClose(); // Close the dialog after successful update
+      onClose();
     } catch (error) {
       toast({
         title: "Error",
