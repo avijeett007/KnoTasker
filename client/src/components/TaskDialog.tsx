@@ -23,7 +23,7 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
   const [editedTask, setEditedTask] = useState(task);
   const [comment, setComment] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const { updateTask } = useTasks(task.projectId);
+  const { updateTask } = useTasks(task.projectId!);
   const { toast } = useToast();
 
   const handleSave = async () => {
@@ -38,15 +38,19 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
 
     setIsSaving(true);
     try {
-      await updateTask({
+      const updatedTask = await updateTask({
         taskId: task.id,
         updates: {
-          title: editedTask.title,
-          description: editedTask.description,
+          title: editedTask.title.trim(),
+          description: editedTask.description?.trim() || null,
           status: editedTask.status,
         },
       });
+      
+      // Update the local state with the server response
+      setEditedTask(updatedTask);
       setIsEditing(false);
+      
       toast({
         title: "Success",
         description: "Task updated successfully",

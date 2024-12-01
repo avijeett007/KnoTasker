@@ -75,9 +75,15 @@ export function registerRoutes(app: Express) {
 
   app.patch("/api/tasks/:taskId", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
-    const { status, order } = req.body;
+    const { title, description, status, order } = req.body;
     const [task] = await db.update(tasks)
-      .set({ status, order, updatedAt: new Date() })
+      .set({ 
+        title: title || undefined,
+        description: description || null,
+        status: status || undefined,
+        order: order || undefined,
+        updatedAt: new Date() 
+      })
       .where(eq(tasks.id, parseInt(req.params.taskId)))
       .returning();
     res.json(task);
