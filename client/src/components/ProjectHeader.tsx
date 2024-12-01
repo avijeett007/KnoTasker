@@ -15,10 +15,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
 import { useTasks } from "../hooks/use-tasks";
+import { TaskStatus } from "../../../shared/types";
 
 interface ProjectHeaderProps {
   project: Project;
@@ -35,7 +36,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
     createTask({
       title: newTaskTitle,
       description: newTaskDescription,
-      status: "todo",
+      status: TaskStatus.TODO,
       order: 0,
     });
     setIsNewTaskDialogOpen(false);

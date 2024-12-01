@@ -1,45 +1,87 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { Switch, Route } from "wouter";
-import "./index.css";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./lib/queryClient";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Route, Router, Switch } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
-import { Loader2 } from "lucide-react";
-import { useUser } from "./hooks/use-user";
-import HomePage from "./pages/HomePage";
-import AuthPage from "./pages/AuthPage";
-import ProjectPage from "./pages/ProjectPage";
+import { LandingPage } from "@/pages/LandingPage";
+import { AuthPage } from "@/pages/AuthPage";
+import { ProjectListPage } from "@/pages/ProjectListPage";
+import { NewProjectPage } from "@/pages/NewProjectPage";
+import { ProjectPage } from "@/pages/ProjectPage";
+import { useUser } from "@/hooks/use-user";
+import "./index.css";
 
-function Router() {
+const queryClient = new QueryClient();
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useUser();
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return null;
   }
 
   if (!user) {
-    return <AuthPage />;
+    window.location.href = "/auth";
+    return null;
   }
 
+  return <>{children}</>;
+}
+
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useUser();
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (user) {
+    window.location.href = "/projects";
+    return null;
+  }
+
+  return <>{children}</>;
+}
+
+function App() {
   return (
-    <Switch>
-      <Route path="/" component={HomePage} />
-      <Route path="/projects/:id" component={ProjectPage} />
-      <Route>404 Page Not Found</Route>
-    </Switch>
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <Switch>
+          <Route path="/">
+            <PublicRoute>
+              <LandingPage />
+            </PublicRoute>
+          </Route>
+          <Route path="/auth">
+            <PublicRoute>
+              <AuthPage />
+            </PublicRoute>
+          </Route>
+          <Route path="/projects">
+            <ProtectedRoute>
+              <ProjectListPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/project/new">
+            <ProtectedRoute>
+              <NewProjectPage />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/project/:id">
+            <ProtectedRoute>
+              <ProjectPage />
+            </ProtectedRoute>
+          </Route>
+        </Switch>
+      </Router>
+      <Toaster />
+    </QueryClientProvider>
   );
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
-    </QueryClientProvider>
-  </StrictMode>,
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
 );

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="400" height="300" fill="#F8FAFC"/>
+  
+  <!-- Calendar -->
+  <rect x="100" y="50" width="200" height="200" rx="8" fill="#FFFFFF" stroke="#A855F7" stroke-width="2"/>
+  
+  <!-- Calendar Header -->
+  <rect x="100" y="50" width="200" height="40" rx="8" fill="#A855F7"/>
+  <text x="150" y="75" font-family="sans-serif" font-size="16" fill="white">Personal Tasks</text>
+  
+  <!-- Calendar Items -->
+  <rect x="120" y="110" width="160" height="20" rx="4" fill="#F3E8FF"/>
+  <rect x="120" y="140" width="160" height="20" rx="4" fill="#F3E8FF"/>
+  <rect x="120" y="170" width="160" height="20" rx="4" fill="#F3E8FF"/>
+  <rect x="120" y="200" width="160" height="20" rx="4" fill="#F3E8FF"/>
+  
+  <!-- Decorative Elements -->
+  <circle cx="350" cy="50" r="20" fill="#A855F7" fill-opacity="0.1"/>
+  <circle cx="50" cy="250" r="20" fill="#A855F7" fill-opacity="0.1"/>
+</svg>

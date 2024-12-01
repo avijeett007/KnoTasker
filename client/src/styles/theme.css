@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+ 
+@layer base {
+  :root {
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+ 
+    --muted: 223 47% 11%;
+    --muted-foreground: 215.4 16.3% 56.9%;
+ 
+    --accent: 216 34% 17%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --popover: 224 71% 4%;
+    --popover-foreground: 215 20.2% 65.1%;
+ 
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+ 
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 1.2%;
+ 
+    --secondary: 222.2 47.4% 11.2%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --ring: 216 34% 17%;
+ 
+    --radius: 0.5rem;
+
+    /* Gradient colors */
+    --gradient-start: 222deg 83% 32%;
+    --gradient-mid: 269deg 85% 41%;
+    --gradient-end: 314deg 85% 45%;
+  }
+}
+
+/* Modern animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 5px rgba(var(--primary), 0.5); }
+  50% { box-shadow: 0 0 20px rgba(var(--primary), 0.5); }
+  100% { box-shadow: 0 0 5px rgba(var(--primary), 0.5); }
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[hsl(var(--gradient-start))] via-[hsl(var(--gradient-mid))] to-[hsl(var(--gradient-end))];
+    background-size: 200% auto;
+    animation: gradient 8s linear infinite;
+  }
+
+  .floating {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .glowing {
+    animation: glow 2s ease-in-out infinite;
+  }
+
+  .gradient-border {
+    position: relative;
+    background: linear-gradient(to right, hsl(var(--gradient-start)), hsl(var(--gradient-mid)), hsl(var(--gradient-end)));
+    background-size: 200% auto;
+    animation: gradient 8s linear infinite;
+    padding: 1px;
+  }
+
+  .gradient-border > * {
+    background: hsl(var(--background));
+    height: 100%;
+    width: 100%;
+  }
+}
+
+/* Custom components */
+@layer components {
+  .glass-card {
+    @apply bg-black/20 backdrop-blur-lg border border-white/10 rounded-lg;
+  }
+
+  .animated-button {
+    @apply relative overflow-hidden transition-all duration-300;
+    background: linear-gradient(90deg, 
+      hsl(var(--gradient-start)),
+      hsl(var(--gradient-mid)),
+      hsl(var(--gradient-end))
+    );
+    background-size: 200% auto;
+  }
+
+  .animated-button:hover {
+    background-position: right center;
+    transform: translateY(-2px);
+  }
+}

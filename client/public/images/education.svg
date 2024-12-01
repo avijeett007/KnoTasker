@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="400" height="300" fill="#F8FAFC"/>
+  
+  <!-- Book Stack -->
+  <rect x="100" y="160" width="200" height="40" rx="4" fill="#FFFFFF" stroke="#F97316" stroke-width="2"/>
+  <rect x="90" y="120" width="200" height="40" rx="4" fill="#FFFFFF" stroke="#F97316" stroke-width="2"/>
+  <rect x="80" y="80" width="200" height="40" rx="4" fill="#FFFFFF" stroke="#F97316" stroke-width="2"/>
+  
+  <!-- Book Titles -->
+  <rect x="100" y="90" width="140" height="10" rx="2" fill="#FED7AA"/>
+  <rect x="110" y="130" width="140" height="10" rx="2" fill="#FED7AA"/>
+  <rect x="120" y="170" width="140" height="10" rx="2" fill="#FED7AA"/>
+  
+  <!-- Graduation Cap -->
+  <path d="M280 60 L320 80 L280 100 L240 80 Z" fill="#F97316"/>
+  <rect x="275" y="80" width="10" height="40" fill="#F97316"/>
+  
+  <!-- Decorative Elements -->
+  <circle cx="350" cy="50" r="20" fill="#F97316" fill-opacity="0.1"/>
+  <circle cx="50" cy="250" r="20" fill="#F97316" fill-opacity="0.1"/>
+</svg>

@@ -1,7 +1,8 @@
 import { Express, Request, Response, NextFunction } from "express";
 import { setupAuth } from "./auth";
 import { db } from "../db";
-import { projects, tasks, comments, projectTypes, projectMembers, users, files, TaskStatus } from "@db/schema";
+import { projects, tasks, comments, projectTypes, projectMembers, users, files } from "@db/schema";
+import { TaskStatus } from "../shared/types";
 import { eq, and } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
@@ -11,11 +12,9 @@ import { z } from "zod";
 // Extend Express.Request to include user
 declare global {
   namespace Express {
-    interface Request {
-      user?: {
-        id: number;
-        username: string;
-      };
+    interface User {
+      id: number;
+      username: string;
     }
   }
 }
@@ -320,50 +319,36 @@ export function registerRoutes(app: Express) {
   });
 
   // Files
-  app.post("/api/tasks/:taskId/files", ensureAuthenticated, async (req: Request, res: Response) => {
+  app.post("/api/tasks/:taskId/files", ensureAuthenticated, upload.single("file"), async (req: Request, res: Response) => {
+    if (!req.user || !req.file) {
+      return res.status(401).json({ error: "Unauthorized or no file provided" });
+    }
+
     // Check if task exists and user has access
     const [task] = await db.select()
       .from(tasks)
       .where(eq(tasks.id, parseInt(req.params.taskId)));
       
     if (!task) return res.status(404).send("Task not found");
-    
-    if (task.projectId) {
-      const hasAccess = await checkProjectAccess(req, task.projectId, "member");
-      if (!hasAccess) return res.status(403).send("Insufficient permissions");
+
+    try {
+      const [file] = await db
+        .insert(files)
+        .values({
+          taskId: task.id,
+          filename: req.file.filename,
+          originalName: req.file.originalname,
+          mimeType: req.file.mimetype,
+          size: req.file.size,
+          uploadedById: req.user.id,
+        })
+        .returning();
+
+      res.json(file);
+    } catch (error) {
+      console.error("Error saving file:", error);
+      res.status(500).send("Failed to save file");
     }
-    
-    upload.single("file")(req, res, async (err) => {
-      if (err instanceof multer.MulterError) {
-        if (err.code === 'LIMIT_FILE_SIZE') {
-          return res.status(400).send(`File size must be less than ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
-        }
-        return res.status(400).send(err.message);
-      } else if (err) {
-        return res.status(400).send(err.message);
-      }
-      
-      if (!req.file) return res.status(400).send("No file uploaded");
-
-      try {
-        const [file] = await db.insert(files)
-          .values({
-            taskId: parseInt(req.params.taskId),
-            filename: req.file.filename,
-            originalName: req.file.originalname,
-            mimeType: req.file.mimetype,
-            size: req.file.size,
-            uploadedById: req.user.id,
-          })
-          .returning();
-
-        res.json(file);
-      } catch (error) {
-        // Clean up uploaded file if database insert fails
-        fs.unlinkSync(path.join("./uploads", req.file.filename));
-        res.status(500).send("Failed to save file information");
-      }
-    });
   });
 
   app.get("/api/tasks/:taskId/files", ensureAuthenticated, async (req: Request, res: Response) => {

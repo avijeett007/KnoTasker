@@ -1,4 +1,5 @@
-import { Task } from "@db/schema";
+import type { Task } from "@db/schema";
+import { TaskStatus } from "../../../shared/types";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MessageSquare, Calendar } from "lucide-react";
@@ -49,18 +50,18 @@ export function TaskCard({ task, index }: TaskCardProps) {
                   </Avatar>
                   <MessageSquare className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <div className={`px-2 py-1 rounded-full text-xs ${
-                  task.status === "todo"
+                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  task.status === TaskStatus.TODO
                     ? "bg-blue-100 text-blue-700"
-                    : task.status === "in-progress"
+                    : task.status === TaskStatus.IN_PROGRESS
                     ? "bg-yellow-100 text-yellow-700"
-                    : task.status === "blocked"
+                    : task.status === TaskStatus.BLOCKED
                     ? "bg-red-100 text-red-700"
                     : "bg-green-100 text-green-700"
                 }`}>
-                  {task.status === "todo" ? "To Do" : 
-                   task.status === "in-progress" ? "In Progress" :
-                   task.status === "blocked" ? "Blocked" : "Done"}
+                  {task.status === TaskStatus.TODO ? "To Do" : 
+                   task.status === TaskStatus.IN_PROGRESS ? "In Progress" : 
+                   task.status === TaskStatus.BLOCKED ? "Blocked" : "Done"}
                 </div>
               </CardFooter>
             </Card>

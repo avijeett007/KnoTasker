@@ -1,6 +1,7 @@
 import { pgTable, text, integer, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
+import { TaskStatus } from "../shared/types";
 
 export const users = pgTable("users", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -25,19 +26,11 @@ export const projects = pgTable("projects", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const TaskStatus = {
-  TODO: "todo",
-  IN_PROGRESS: "in_progress",
-  DONE: "done",
-} as const;
-
-export type TaskStatusType = typeof TaskStatus[keyof typeof TaskStatus];
-
 export const tasks = pgTable("tasks", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   title: text("title").notNull(),
   description: text("description"),
-  status: text("status", { enum: ["todo", "in_progress", "done"] as const }).notNull().default("todo"),
+  status: text("status", { enum: [TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED, TaskStatus.DONE] }).notNull().default(TaskStatus.TODO),
   projectId: integer("project_id").references(() => projects.id),
   assignedToId: integer("assigned_to_id").references(() => users.id),
   createdById: integer("created_by_id").references(() => users.id),

@@ -13,6 +13,7 @@ import { Loader2, Download, User } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useState } from "react";
+import { TaskStatus, TaskStatusType } from "../../../shared/types";
 
 interface TaskDialogProps {
   task: Task;
@@ -133,7 +134,7 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
         updates: {
           title: editedTask.title.trim(),
           description: editedTask.description?.trim() || null,
-          status: editedTask.status || "todo",
+          status: editedTask.status,
           assignedToId: editedTask.assignedToId,
         },
       });
@@ -188,21 +189,20 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
               <Label>Status</Label>
               <Select
                 value={editedTask.status}
-                onValueChange={(value) => {
+                onValueChange={(value: TaskStatusType) => {
                   setEditedTask({ ...editedTask, status: value });
                   if (!isEditing) {
                     updateTask({ taskId: task.id, updates: { status: value } });
                   }
                 }}
               >
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select a status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todo">To Do</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="blocked">Blocked</SelectItem>
-                  <SelectItem value="done">Done</SelectItem>
+                  <SelectItem value={TaskStatus.TODO}>To Do</SelectItem>
+                  <SelectItem value={TaskStatus.IN_PROGRESS}>In Progress</SelectItem>
+                  <SelectItem value={TaskStatus.DONE}>Done</SelectItem>
                 </SelectContent>
               </Select>
             </div>

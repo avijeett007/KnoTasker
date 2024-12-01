@@ -31,7 +31,7 @@ export async function addDefaultProjectTypes() {
     console.log("Adding default project types...");
     await db.insert(projectTypes).values(defaultTypes);
     console.log("Default project types added successfully!");
-  } catch (error) {
+  } catch (error: any) {
     if (error.code === '23505') { // Unique violation
       console.log("Default project types already exist, skipping...");
     } else {

@@ -2,14 +2,15 @@ import { DragDropContext, DropResult, DroppableProvided, DroppableStateSnapshot 
 import { TaskCard } from "./TaskCard";
 import { useTasks } from "../hooks/use-tasks";
 import type { Task } from "@db/schema";
+import { TaskStatus } from "../../../shared/types";
 import { useState } from "react";
 import StrictModeDroppable from "./StrictModeDroppable";
 
 const COLUMNS = [
-  { id: "todo", title: "To Do" },
-  { id: "in-progress", title: "In Progress" },
-  { id: "blocked", title: "Blocked" },
-  { id: "done", title: "Done" },
+  { id: TaskStatus.TODO, title: "To Do" },
+  { id: TaskStatus.IN_PROGRESS, title: "In Progress" },
+  { id: TaskStatus.BLOCKED, title: "Blocked" },
+  { id: TaskStatus.DONE, title: "Done" },
 ];
 
 interface ProjectBoardProps {
@@ -56,7 +57,7 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
     updateTask({
       taskId: task.id,
       updates: {
-        status: result.destination.droppableId,
+        status: result.destination.droppableId as TaskStatus,
         order: newOrder,
       },
     });
