@@ -285,4 +285,66 @@ export function registerRoutes(app: Express) {
     if (!req.user) return res.status(401).send("Unauthorized");
     res.download(path.join("./uploads", req.params.filename));
   });
+
+  // Comments
+  app.post("/api/tasks/:taskId/comments", async (req, res) => {
+    if (!req.user) return res.status(401).send("Unauthorized");
+    
+    const [task] = await db.select()
+      .from(tasks)
+      .where(eq(tasks.id, parseInt(req.params.taskId)));
+      
+    if (!task) return res.status(404).send("Task not found");
+    
+    // Allow any project member to add comments
+    const [member] = await db.select()
+      .from(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, task.projectId),
+          eq(projectMembers.userId, req.user.id)
+        )
+      );
+      
+    if (!member) return res.status(403).send("Must be a project member to add comments");
+    
+    const { content } = req.body;
+    const [comment] = await db.insert(comments)
+      .values({
+        content,
+        taskId: task.id,
+        createdById: req.user.id,
+      })
+      .returning();
+    
+    res.json(comment);
+  });
+
+  app.get("/api/tasks/:taskId/comments", async (req, res) => {
+    if (!req.user) return res.status(401).send("Unauthorized");
+    
+    const [task] = await db.select()
+      .from(tasks)
+      .where(eq(tasks.id, parseInt(req.params.taskId)));
+      
+    if (!task) return res.status(404).send("Task not found");
+    
+    // Allow any project member to view comments
+    const [member] = await db.select()
+      .from(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, task.projectId),
+          eq(projectMembers.userId, req.user.id)
+        )
+      );
+      
+    if (!member) return res.status(403).send("Must be a project member to view comments");
+    
+    const taskComments = await db.select()
+      .from(comments)
+      .where(eq(comments.taskId, parseInt(req.params.taskId)));
+    
+    res.json(taskComments);
+  });
 }
