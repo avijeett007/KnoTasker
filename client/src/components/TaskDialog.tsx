@@ -20,33 +20,11 @@ interface TaskDialogProps {
 
 export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTask, setEditedTask] = useState<Task>(() => ({
-    id: task.id,
-    title: task.title,
-    description: task.description || null,
+  const [editedTask, setEditedTask] = useState<Task>({
+    ...task,
     status: task.status || "todo",
-    projectId: task.projectId,
-    assignedToId: task.assignedToId,
-    createdById: task.createdById,
-    createdAt: task.createdAt,
-    updatedAt: task.updatedAt,
-    order: task.order
-  }));
-
-  useEffect(() => {
-    setEditedTask({
-      id: task.id,
-      title: task.title,
-      description: task.description || null,
-      status: task.status || "todo",
-      projectId: task.projectId,
-      assignedToId: task.assignedToId,
-      createdById: task.createdById,
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt,
-      order: task.order
-    });
-  }, [task]);
+    description: task.description || null,
+  });
   const [comment, setComment] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const { updateTask } = useTasks(task.projectId!);
@@ -64,23 +42,23 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
 
     setIsSaving(true);
     try {
-      const updatedTask = await updateTask({
+      const result = await updateTask({
         taskId: task.id,
         updates: {
           title: editedTask.title.trim(),
           description: editedTask.description?.trim() || null,
-          status: editedTask.status || 'todo',
+          status: editedTask.status || "todo",
         },
-      }) as Task;  // Type assertion to ensure proper typing
-      
-      // Update the local state with the server response
-      setEditedTask(updatedTask);
-      setIsEditing(false);
-      
-      toast({
-        title: "Success",
-        description: "Task updated successfully",
       });
+      
+      if (result) {
+        setEditedTask(result);
+        setIsEditing(false);
+        toast({
+          title: "Success",
+          description: "Task updated successfully",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",

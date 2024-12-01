@@ -49,14 +49,11 @@ export function useTasks(projectId: number) {
     },
   });
 
-  const updateTask = useMutation({
-    mutationFn: async ({
-      taskId,
-      updates,
-    }: {
-      taskId: number;
-      updates: Partial<Task>;
-    }) => {
+  const updateTask = useMutation<Task, Error, {
+    taskId: number;
+    updates: Partial<Task>;
+  }>({
+    mutationFn: async ({ taskId, updates }) => {
       const response = await fetch(`/api/tasks/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
