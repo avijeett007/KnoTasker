@@ -35,6 +35,19 @@ export function registerRoutes(app: Express) {
     res.json(project);
   });
 
+  app.get("/api/projects/:id", async (req, res) => {
+    if (!req.user) return res.status(401).send("Unauthorized");
+    const project = await db.select().from(projects)
+      .where(eq(projects.id, parseInt(req.params.id)))
+      .limit(1);
+    
+    if (!project.length) {
+      return res.status(404).send("Project not found");
+    }
+    
+    res.json(project[0]);
+  });
+
   // Tasks
   app.get("/api/projects/:projectId/tasks", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");

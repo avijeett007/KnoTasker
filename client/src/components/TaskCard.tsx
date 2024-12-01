@@ -25,7 +25,7 @@ export function TaskCard({ task, index }: TaskCardProps) {
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
                 <span>
-                  {format(new Date(task.createdAt), "MMM d, yyyy")}
+                  {format(new Date(task.createdAt || Date.now()), "MMM d, yyyy")}
                 </span>
               </div>
             </CardHeader>
