@@ -4,6 +4,7 @@ import { Input } from "./ui/input";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import type { ProjectMember } from "@db/schema";
 
 interface ProjectTeamDialogProps {
   projectId: number;
@@ -99,7 +100,7 @@ export function ProjectTeamDialog({ projectId, isOpen, onClose }: ProjectTeamDia
           </div>
           
           <div className="space-y-2">
-            {members.map((member) => (
+            {members.map((member: ProjectMember) => (
               <div 
                 key={member.id}
                 className="flex items-center justify-between p-2 bg-muted rounded-lg"

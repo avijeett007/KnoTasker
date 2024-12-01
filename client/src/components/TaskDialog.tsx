@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import type { Task } from "@db/schema";
+import type { Task, File, Comment } from "@db/schema";
 import { useTasks } from "../hooks/use-tasks";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Download, User } from "lucide-react";
@@ -285,7 +285,7 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
                 disabled={uploadFile.isPending}
               />
               <div className="grid grid-cols-1 gap-2">
-                {files.map((file) => (
+                {files.map((file: File) => (
                   <div key={file.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
                     <span className="text-sm truncate">{file.originalName}</span>
                     <a
@@ -328,7 +328,7 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
               {comments.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No comments yet</p>
               ) : (
-                comments.map((comment) => (
+                comments.map((comment: Comment) => (
                   <div key={comment.id} className="border rounded-lg p-3 space-y-2">
                     <p className="text-sm">{comment.content}</p>
                     <p className="text-xs text-muted-foreground">

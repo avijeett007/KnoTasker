@@ -1,4 +1,4 @@
-import { DragDropContext, DropResult } from "react-beautiful-dnd";
+import { DragDropContext, DropResult, DroppableProvided, DroppableStateSnapshot } from "react-beautiful-dnd";
 import { TaskCard } from "./TaskCard";
 import { useTasks } from "../hooks/use-tasks";
 import type { Task } from "@db/schema";
@@ -80,7 +80,7 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
               </span>
             </h2>
             <StrictModeDroppable droppableId={column.id} type="TASK">
-              {(provided, snapshot) => (
+              {(provided: DroppableProvided, snapshot: DroppableStateSnapshot) => (
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}

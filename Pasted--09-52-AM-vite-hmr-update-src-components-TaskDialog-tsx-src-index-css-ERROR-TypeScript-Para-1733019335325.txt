@@ -1,0 +1,149 @@
+:09:52 AM [vite] hmr update /src/components/TaskDialog.tsx, /src/index.css
+
+ ERROR(TypeScript)  Parameter 'provided' implicitly has an 'any' type.
+ FILE  /home/runner/ProjectTasker/client/src/components/ProjectBoard.tsx:83:17
+
+    81 |             </h2>
+    82 |             <StrictModeDroppable droppableId={column.id} type="TASK">
+  > 83 |               {(provided, snapshot) => (
+       |                 ^^^^^^^^
+    84 |                 <div
+    85 |                   ref={provided.innerRef}
+    86 |                   {...provided.droppableProps}
+
+ ERROR(TypeScript)  Parameter 'snapshot' implicitly has an 'any' type.
+ FILE  /home/runner/ProjectTasker/client/src/components/ProjectBoard.tsx:83:27
+
+    81 |             </h2>
+    82 |             <StrictModeDroppable droppableId={column.id} type="TASK">
+  > 83 |               {(provided, snapshot) => (
+       |                           ^^^^^^^^
+    84 |                 <div
+    85 |                   ref={provided.innerRef}
+    86 |                   {...provided.droppableProps}
+
+ ERROR(TypeScript)  Parameter 'member' implicitly has an 'any' type.
+ FILE  /home/runner/ProjectTasker/client/src/components/ProjectTeamDialog.tsx:102:27
+
+    100 |           
+    101 |           <div className="space-y-2">
+  > 102 |             {members.map((member) => (
+        |                           ^^^^^^
+    103 |               <div 
+    104 |                 key={member.id}
+    105 |                 className="flex items-center justify-between p-2 bg-muted rounded-lg"
+
+ ERROR(TypeScript)  Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+ FILE  /home/runner/ProjectTasker/client/src/components/TaskDialog.tsx:36:35
+
+    34 |   const { toast } = useToast();
+    35 |   const queryClient = useQueryClient();
+  > 36 |   const { updateTask } = useTasks(task.projectId);
+       |                                   ^^^^^^^^^^^^^^
+    37 |
+    38 |   const uploadFile = useMutation({
+    39 |     mutationFn: async (file: File) => {
+
+ ERROR(TypeScript)  Parameter 'member' implicitly has an 'any' type.
+ FILE  /home/runner/ProjectTasker/client/src/components/TaskDialog.tsx:234:33
+
+    232 |                     </div>
+    233 |                   </SelectItem>
+  > 234 |                   {members.map((member) => (
+        |                                 ^^^^^^
+    235 |                     <SelectItem key={member.userId} value={member.userId.toString()}>
+    236 |                       <div className="flex items-center gap-2">
+    237 |                         <Avatar className="h-6 w-6">
+
+ ERROR(TypeScript)  Parameter 'file' implicitly has an 'any' type.
+ FILE  /home/runner/ProjectTasker/client/src/components/TaskDialog.tsx:288:29
+
+    286 |               />
+    287 |               <div className="grid grid-cols-1 gap-2">
+  > 288 |                 {files.map((file) => (
+        |                             ^^^^
+    289 |                   <div key={file.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
+    290 |                     <span className="text-sm truncate">{file.originalName}</span>
+    291 |                     <a
+
+ ERROR(TypeScript)  Parameter 'comment' implicitly has an 'any' type.
+ FILE  /home/runner/ProjectTasker/client/src/components/TaskDialog.tsx:331:31
+
+    329 |                 <p className="text-sm text-muted-foreground">No comments yet</p>
+    330 |               ) : (
+  > 331 |                 comments.map((comment) => (
+        |                               ^^^^^^^
+    332 |                   <div key={comment.id} className="border rounded-lg p-3 space-y-2">
+    333 |                     <p className="text-sm">{comment.content}</p>
+    334 |                     <p className="text-xs text-muted-foreground">
+
+ ERROR(TypeScript)  Property 'where' does not exist on type 'Omit<PgSelectBase<"project_members", { id: PgColumn<{ name: "id"; tableName: "project_members"; dataType: "number"; columnType: "PgInteger"; data: number; driverParam: string | number; notNull: true; hasDefault: true; ... 5 more ...; generated: GeneratedColumnConfig<...> & { ...; }; }, {}, {}>; projectId: PgColumn<....'.
+ FILE  /home/runner/ProjectTasker/server/routes.ts:35:6
+
+    33 |     .from(projectMembers)
+    34 |     .where(eq(projectMembers.projectId, projectId))
+  > 35 |     .where(eq(projectMembers.userId, req.user.id));
+       |      ^^^^^
+    36 |
+    37 |   if (!member) return false;
+    38 |   
+
+ ERROR(TypeScript)  Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+ FILE  /home/runner/ProjectTasker/server/routes.ts:140:53
+
+    138 |     if (!task) return res.status(404).send("Task not found");
+    139 |     
+  > 140 |     const hasAccess = await checkProjectAccess(req, task.projectId, "member");
+        |                                                     ^^^^^^^^^^^^^^
+    141 |     if (!hasAccess) return res.status(403).send("Insufficient permissions");
+    142 |     
+    143 |     const { title, description, status, order, assignedToId } = req.body;
+
+ ERROR(TypeScript)  Property 'where' does not exist on type 'Omit<PgSelectBase<"project_members", { id: PgColumn<{ name: "id"; tableName: "project_members"; dataType: "number"; columnType: "PgInteger"; data: number; driverParam: string | number; notNull: true; hasDefault: true; ... 5 more ...; generated: GeneratedColumnConfig<...> & { ...; }; }, {}, {}>; projectId: PgColumn<....'.
+ FILE  /home/runner/ProjectTasker/server/routes.ts:187:8
+
+    185 |       .from(projectMembers)
+    186 |       .where(eq(projectMembers.projectId, parseInt(req.params.projectId)))
+  > 187 |       .where(eq(projectMembers.userId, req.user.id))
+        |        ^^^^^
+    188 |       .limit(1);
+    189 |
+    190 |     if (!membership) {
+
+ ERROR(TypeScript)  Property 'where' does not exist on type 'Omit<PgSelectBase<"project_members", { id: PgColumn<{ name: "id"; tableName: "project_members"; dataType: "number"; columnType: "PgInteger"; data: number; driverParam: string | number; notNull: true; hasDefault: true; ... 5 more ...; generated: GeneratedColumnConfig<...> & { ...; }; }, {}, {}>; projectId: PgColumn<....'.
+ FILE  /home/runner/ProjectTasker/server/routes.ts:215:8
+
+    213 |       .from(projectMembers)
+    214 |       .where(eq(projectMembers.projectId, parseInt(req.params.projectId)))
+  > 215 |       .where(eq(projectMembers.userId, req.user.id))
+        |        ^^^^^
+    216 |       .where(eq(projectMembers.role, "owner"))
+    217 |       .limit(1);
+    218 |
+
+ ERROR(TypeScript)  Property 'where' does not exist on type 'Omit<PgSelectBase<"project_members", { id: PgColumn<{ name: "id"; tableName: "project_members"; dataType: "number"; columnType: "PgInteger"; data: number; driverParam: string | number; notNull: true; hasDefault: true; ... 5 more ...; generated: GeneratedColumnConfig<...> & { ...; }; }, {}, {}>; projectId: PgColumn<....'.
+ FILE  /home/runner/ProjectTasker/server/routes.ts:277:8
+
+    275 |       .from(projectMembers)
+    276 |       .where(eq(projectMembers.projectId, parseInt(req.params.projectId)))
+  > 277 |       .where(eq(projectMembers.userId, req.user.id))
+        |        ^^^^^
+    278 |       .where(eq(projectMembers.role, "owner"))
+    279 |       .limit(1);
+    280 |
+
+ ERROR(TypeScript)  Property 'where' does not exist on type 'Omit<PgDeleteBase<PgTableWithColumns<{ name: "project_members"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "project_members"; dataType: "number"; columnType: "PgInteger"; data: number; driverParam: string | number; ... 7 more ...; generated: GeneratedColumnConfig<...> & { ...; }; }, {}, {}>;...'.
+ FILE  /home/runner/ProjectTasker/server/routes.ts:287:8
+
+    285 |     await db.delete(projectMembers)
+    286 |       .where(eq(projectMembers.id, parseInt(req.params.memberId)))
+  > 287 |       .where(eq(projectMembers.projectId, parseInt(req.params.projectId)));
+        |        ^^^^^
+    288 |
+    289 |     res.json({ message: "Member removed successfully" });
+    290 |   });
+
+[TypeScript] Found 13 errors. Watching for file changes.
+2:10:52 AM [tsx] change in ./server/routes.ts Restarting...

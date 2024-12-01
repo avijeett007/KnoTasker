@@ -30,10 +30,12 @@ async function checkProjectAccess(
   
   const members = await db.select()
     .from(projectMembers)
-    .where(and(
-      eq(projectMembers.projectId, projectId),
-      eq(projectMembers.userId, req.user.id)
-    ));
+    .where(
+      and(
+        eq(projectMembers.projectId, projectId),
+        eq(projectMembers.userId, req.user.id)
+      )
+    );
 
   const member = members[0];
   if (!member) return false;
@@ -59,7 +61,8 @@ export function registerRoutes(app: Express) {
   // Projects
   app.get("/api/projects", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
-    const userProjects = await db.select().from(projects)
+    const userProjects = await db.select()
+      .from(projects)
       .where(eq(projects.createdById, req.user.id));
     res.json(userProjects);
   });
@@ -112,7 +115,8 @@ export function registerRoutes(app: Express) {
   app.post("/api/projects/:projectId/tasks", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
     
-    const hasAccess = await checkProjectAccess(req, parseInt(req.params.projectId), "member");
+    const projectId = parseInt(req.params.projectId);
+    const hasAccess = await checkProjectAccess(req, projectId, "member");
     if (!hasAccess) return res.status(403).send("Insufficient permissions");
     
     const { title, description, status, order } = req.body;
@@ -122,7 +126,7 @@ export function registerRoutes(app: Express) {
         description,
         status,
         order,
-        projectId: parseInt(req.params.projectId),
+        projectId,
         createdById: req.user.id,
       })
       .returning();
@@ -139,8 +143,10 @@ export function registerRoutes(app: Express) {
     if (!taskResults.length) return res.status(404).send("Task not found");
     const task = taskResults[0];
     
-    const hasAccess = await checkProjectAccess(req, task.projectId, "member");
-    if (!hasAccess) return res.status(403).send("Insufficient permissions");
+    if (task.projectId) {
+      const hasAccess = await checkProjectAccess(req, task.projectId, "member");
+      if (!hasAccess) return res.status(403).send("Insufficient permissions");
+    }
     
     const { title, description, status, order, assignedToId } = req.body;
     const [updatedTask] = await db.update(tasks)
@@ -149,7 +155,7 @@ export function registerRoutes(app: Express) {
         description: description || null,
         status: status || undefined,
         order: order || undefined,
-        assignedToId: assignedToId,
+        assignedToId: assignedToId || null,
         updatedAt: new Date() 
       })
       .where(eq(tasks.id, parseInt(req.params.taskId)))
@@ -161,15 +167,9 @@ export function registerRoutes(app: Express) {
   app.get("/api/projects/:projectId/members", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
     
-    // Check if user is a member of the project
-    const members = await db.select()
-      .from(projectMembers)
-      .where(and(
-        eq(projectMembers.projectId, parseInt(req.params.projectId)),
-        eq(projectMembers.userId, req.user.id)
-      ));
-
-    if (!members.length) {
+    const projectId = parseInt(req.params.projectId);
+    const isMember = await checkProjectAccess(req, projectId, "member");
+    if (!isMember) {
       return res.status(403).send("Not a member of this project");
     }
 
@@ -182,7 +182,7 @@ export function registerRoutes(app: Express) {
     })
     .from(projectMembers)
     .innerJoin(users, eq(users.id, projectMembers.userId))
-    .where(eq(projectMembers.projectId, parseInt(req.params.projectId)));
+    .where(eq(projectMembers.projectId, projectId));
 
     res.json(projectMembers);
   });
@@ -190,16 +190,9 @@ export function registerRoutes(app: Express) {
   app.post("/api/projects/:projectId/invites", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
     
-    // Check if user has permission to invite
-    const members = await db.select()
-      .from(projectMembers)
-      .where(and(
-        eq(projectMembers.projectId, parseInt(req.params.projectId)),
-        eq(projectMembers.userId, req.user.id),
-        eq(projectMembers.role, "owner")
-      ));
-
-    if (!members.length) {
+    const projectId = parseInt(req.params.projectId);
+    const isOwner = await checkProjectAccess(req, projectId, "owner");
+    if (!isOwner) {
       return res.status(403).send("Only project owners can invite members");
     }
 
@@ -211,7 +204,7 @@ export function registerRoutes(app: Express) {
 
     const [invite] = await db.insert(projectInvites)
       .values({
-        projectId: parseInt(req.params.projectId),
+        projectId,
         invitedByUserId: req.user.id,
         invitedUserEmail: email,
         expiresAt
@@ -224,12 +217,18 @@ export function registerRoutes(app: Express) {
   app.post("/api/invites/:inviteId/accept", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
 
+    const inviteId = parseInt(req.params.inviteId);
     const invites = await db.select()
       .from(projectInvites)
-      .where(eq(projectInvites.id, parseInt(req.params.inviteId)));
+      .where(
+        and(
+          eq(projectInvites.id, inviteId),
+          eq(projectInvites.status, "pending")
+        )
+      );
 
     const invite = invites[0];
-    if (!invite || invite.status !== "pending") {
+    if (!invite) {
       return res.status(400).send("Invalid or expired invitation");
     }
 
@@ -253,24 +252,19 @@ export function registerRoutes(app: Express) {
   app.delete("/api/projects/:projectId/members/:memberId", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
     
-    // Check if user is project owner
-    const owners = await db.select()
-      .from(projectMembers)
-      .where(and(
-        eq(projectMembers.projectId, parseInt(req.params.projectId)),
-        eq(projectMembers.userId, req.user.id),
-        eq(projectMembers.role, "owner")
-      ));
-
-    if (!owners.length) {
+    const projectId = parseInt(req.params.projectId);
+    const isOwner = await checkProjectAccess(req, projectId, "owner");
+    if (!isOwner) {
       return res.status(403).send("Only project owners can remove members");
     }
 
     await db.delete(projectMembers)
-      .where(and(
-        eq(projectMembers.id, parseInt(req.params.memberId)),
-        eq(projectMembers.projectId, parseInt(req.params.projectId))
-      ));
+      .where(
+        and(
+          eq(projectMembers.id, parseInt(req.params.memberId)),
+          eq(projectMembers.projectId, projectId)
+        )
+      );
 
     res.json({ message: "Member removed successfully" });
   });
