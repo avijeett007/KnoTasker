@@ -12,69 +12,80 @@ interface ProjectTeamDialogProps {
   onClose: () => void;
 }
 
-export function ProjectTeamDialog({ projectId, isOpen, onClose }: ProjectTeamDialogProps) {
+export function ProjectTeamDialog({
+  projectId,
+  isOpen,
+  onClose,
+}: ProjectTeamDialogProps) {
   const [username, setUsername] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const { data: members = [] } = useQuery({
     queryKey: ["project-members", projectId],
     queryFn: async () => {
       const response = await fetch(`/api/projects/${projectId}/members`);
       if (!response.ok) throw new Error("Failed to fetch members");
       return response.json();
-    }
+    },
   });
-  
+
   const addMember = useMutation({
     mutationFn: async (username: string) => {
       const response = await fetch(`/api/projects/${projectId}/members`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username })
+        body: JSON.stringify({ username }),
       });
       if (!response.ok) throw new Error("Failed to add member");
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["project-members", projectId] });
+      queryClient.invalidateQueries({
+        queryKey: ["project-members", projectId],
+      });
       setUsername("");
       toast({
         title: "Success",
-        description: "Member added successfully"
+        description: "Member added successfully",
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   const removeMember = useMutation({
     mutationFn: async (memberId: number) => {
-      const response = await fetch(`/api/projects/${projectId}/members/${memberId}`, {
-        method: "DELETE"
-      });
+      const response = await fetch(
+        `/api/projects/${projectId}/members/${memberId}`,
+        {
+          method: "DELETE",
+        },
+      );
       if (!response.ok) throw new Error("Failed to remove member");
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["project-members", projectId] });
+      queryClient.invalidateQueries({
+        queryKey: ["project-members", projectId],
+      });
       toast({
         title: "Success",
-        description: "Member removed successfully"
+        description: "Member removed successfully",
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   return (
@@ -83,7 +94,7 @@ export function ProjectTeamDialog({ projectId, isOpen, onClose }: ProjectTeamDia
         <DialogHeader>
           <DialogTitle>Team Members</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <div className="flex gap-2">
             <Input
@@ -91,28 +102,27 @@ export function ProjectTeamDialog({ projectId, isOpen, onClose }: ProjectTeamDia
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
-            <Button 
+            <Button
               onClick={() => username && addMember.mutate(username)}
               disabled={addMember.isPending}
             >
               Add Member
             </Button>
           </div>
-          
+
           <div className="space-y-2">
             {members.map((member: ProjectMember) => (
-              <div 
+              <div
                 key={member.id}
                 className="flex items-center justify-between p-2 bg-muted rounded-lg"
               >
                 <div>
-                  <p className="font-medium">{member.username}</p>
                   <p className="text-sm text-muted-foreground capitalize">
                     {member.role}
                   </p>
                 </div>
                 {member.role !== "owner" && (
-                  <Button 
+                  <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => removeMember.mutate(member.id)}
