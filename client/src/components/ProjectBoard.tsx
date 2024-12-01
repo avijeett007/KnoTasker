@@ -17,6 +17,9 @@ interface ProjectBoardProps {
 export function ProjectBoard({ projectId }: ProjectBoardProps) {
   const { tasks, updateTask } = useTasks(projectId);
 
+  const getTasksByStatus = (status: string) =>
+    tasks?.filter((task) => task.status === status).sort((a, b) => a.order - b.order) || [];
+
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
 
@@ -24,7 +27,22 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
     if (!task) return;
 
     const newStatus = result.destination.droppableId;
-    const newOrder = result.destination.index;
+    const sourceIndex = result.source.index;
+    const destIndex = result.destination.index;
+
+    // Calculate new order
+    const tasksInNewStatus = getTasksByStatus(newStatus);
+    let newOrder = 0;
+    
+    if (destIndex === 0) {
+      newOrder = (tasksInNewStatus[0]?.order ?? 0) - 1000;
+    } else if (destIndex === tasksInNewStatus.length) {
+      newOrder = (tasksInNewStatus[tasksInNewStatus.length - 1]?.order ?? 0) + 1000;
+    } else {
+      const prevTask = tasksInNewStatus[destIndex - 1];
+      const nextTask = tasksInNewStatus[destIndex];
+      newOrder = (prevTask.order + nextTask.order) / 2;
+    }
 
     updateTask({
       taskId: task.id,
@@ -35,24 +53,24 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
     });
   };
 
-  const getTasksByStatus = (status: string) =>
-    tasks?.filter((task) => task.status === status).sort((a, b) => a.order - b.order) || [];
-
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-6">
         {COLUMNS.map((column) => (
-          <div
-            key={column.id}
-            className="bg-muted/50 rounded-lg p-4"
-          >
-            <h2 className="font-semibold mb-4">{column.title}</h2>
+          <div key={column.id} className="bg-muted/30 rounded-lg p-4 min-h-[500px]">
+            <h2 className="font-semibold mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-primary"></span>
+              {column.title}
+              <span className="ml-auto text-muted-foreground text-sm">
+                {getTasksByStatus(column.id).length}
+              </span>
+            </h2>
             <Droppable droppableId={column.id}>
               {(provided) => (
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className="min-h-[200px]"
+                  className="space-y-3"
                 >
                   {getTasksByStatus(column.id).map((task: Task, index: number) => (
                     <TaskCard key={task.id} task={task} index={index} />
