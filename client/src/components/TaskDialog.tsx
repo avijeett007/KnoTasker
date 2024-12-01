@@ -35,38 +35,15 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
   const queryClient = useQueryClient();
   const { updateTask } = useTasks(task.projectId);
 
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-
   const uploadFile = useMutation({
     mutationFn: async (file: File) => {
-      if (file.size > MAX_FILE_SIZE) {
-        throw new Error("File size exceeds 5MB limit");
-      }
-
-      const allowedTypes = [
-        'image/jpeg', 'image/png', 'image/gif',
-        'application/pdf', 'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'text/plain'
-      ];
-
-      if (!allowedTypes.includes(file.type)) {
-        throw new Error("File type not supported");
-      }
-
       const formData = new FormData();
       formData.append("file", file);
-      
       const response = await fetch(`/api/tasks/${task.id}/files`, {
         method: "POST",
         body: formData,
       });
-
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || "Failed to upload file");
-      }
-
+      if (!response.ok) throw new Error("Failed to upload file");
       return response.json();
     },
     onSuccess: () => {
@@ -76,10 +53,10 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
         description: "File uploaded successfully",
       });
     },
-    onError: (error: Error) => {
+    onError: () => {
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to upload file",
         variant: "destructive",
       });
     },

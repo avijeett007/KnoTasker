@@ -45,7 +45,7 @@ export default function HomePage() {
           <h1 className="text-2xl font-bold">Project Management</h1>
           <div className="flex items-center gap-4">
             <span className="text-muted-foreground">
-              Welcome, {user?.email}
+              Welcome, {user?.username}
             </span>
             <Button variant="ghost" onClick={() => logout()}>
               <LogOut className="h-4 w-4 mr-2" />
