@@ -63,12 +63,14 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
                 {getTasksByStatus(column.id).length}
               </span>
             </h2>
-            <Droppable droppableId={column.id}>
-              {(provided) => (
+            <Droppable droppableId={column.id} type="TASK">
+              {(provided, snapshot) => (
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className="space-y-3"
+                  className={`space-y-3 min-h-[200px] ${
+                    snapshot.isDraggingOver ? 'bg-muted/50' : ''
+                  }`}
                 >
                   {getTasksByStatus(column.id).map((task: Task, index: number) => (
                     <TaskCard key={task.id} task={task} index={index} />
