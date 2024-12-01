@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { Input } from "./ui/input";
@@ -20,10 +20,33 @@ interface TaskDialogProps {
 
 export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTask, setEditedTask] = useState<Task>({
-    ...task,
-    status: task.status || 'todo'  // Ensure status has a default value
-  });
+  const [editedTask, setEditedTask] = useState<Task>(() => ({
+    id: task.id,
+    title: task.title,
+    description: task.description || null,
+    status: task.status || "todo",
+    projectId: task.projectId,
+    assignedToId: task.assignedToId,
+    createdById: task.createdById,
+    createdAt: task.createdAt,
+    updatedAt: task.updatedAt,
+    order: task.order
+  }));
+
+  useEffect(() => {
+    setEditedTask({
+      id: task.id,
+      title: task.title,
+      description: task.description || null,
+      status: task.status || "todo",
+      projectId: task.projectId,
+      assignedToId: task.assignedToId,
+      createdById: task.createdById,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+      order: task.order
+    });
+  }, [task]);
   const [comment, setComment] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const { updateTask } = useTasks(task.projectId!);
