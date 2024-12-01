@@ -20,7 +20,10 @@ interface TaskDialogProps {
 
 export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTask, setEditedTask] = useState(task);
+  const [editedTask, setEditedTask] = useState<Task>({
+    ...task,
+    status: task.status || 'todo'  // Ensure status has a default value
+  });
   const [comment, setComment] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const { updateTask } = useTasks(task.projectId!);
@@ -43,9 +46,9 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
         updates: {
           title: editedTask.title.trim(),
           description: editedTask.description?.trim() || null,
-          status: editedTask.status,
+          status: editedTask.status || 'todo',
         },
-      });
+      }) as Task;  // Type assertion to ensure proper typing
       
       // Update the local state with the server response
       setEditedTask(updatedTask);
