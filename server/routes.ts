@@ -1,7 +1,7 @@
 import { Express } from "express";
 import { setupAuth } from "./auth";
 import { db } from "../db";
-import { projects, tasks, comments, projectTypes } from "@db/schema";
+import { projects, tasks, comments, projectTypes, projectMembers, projectInvites, users } from "@db/schema";
 import { eq } from "drizzle-orm";
 
 export function registerRoutes(app: Express) {
@@ -32,6 +32,15 @@ export function registerRoutes(app: Express) {
         createdById: req.user.id,
       })
       .returning();
+
+    // Add creator as project owner
+    await db.insert(projectMembers)
+      .values({
+        projectId: project.id,
+        userId: req.user.id,
+        role: "owner"
+      });
+
     res.json(project);
   });
 
@@ -108,5 +117,118 @@ export function registerRoutes(app: Express) {
       })
       .returning();
     res.json(comment);
+  });
+
+  // Project Members and Collaboration
+  app.get("/api/projects/:projectId/members", async (req, res) => {
+    if (!req.user) return res.status(401).send("Unauthorized");
+    
+    // Check if user is a member of the project
+    const [membership] = await db.select()
+      .from(projectMembers)
+      .where(eq(projectMembers.projectId, parseInt(req.params.projectId)))
+      .where(eq(projectMembers.userId, req.user.id))
+      .limit(1);
+
+    if (!membership) {
+      return res.status(403).send("Not a member of this project");
+    }
+
+    const members = await db.select({
+      id: projectMembers.id,
+      userId: users.id,
+      username: users.username,
+      role: projectMembers.role,
+      createdAt: projectMembers.createdAt
+    })
+    .from(projectMembers)
+    .innerJoin(users, eq(users.id, projectMembers.userId))
+    .where(eq(projectMembers.projectId, parseInt(req.params.projectId)));
+
+    res.json(members);
+  });
+
+  app.post("/api/projects/:projectId/invites", async (req, res) => {
+    if (!req.user) return res.status(401).send("Unauthorized");
+    
+    // Check if user has permission to invite
+    const [membership] = await db.select()
+      .from(projectMembers)
+      .where(eq(projectMembers.projectId, parseInt(req.params.projectId)))
+      .where(eq(projectMembers.userId, req.user.id))
+      .where(eq(projectMembers.role, "owner"))
+      .limit(1);
+
+    if (!membership) {
+      return res.status(403).send("Only project owners can invite members");
+    }
+
+    const { email } = req.body;
+    
+    // Create invitation
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7); // Expires in 7 days
+
+    const [invite] = await db.insert(projectInvites)
+      .values({
+        projectId: parseInt(req.params.projectId),
+        invitedByUserId: req.user.id,
+        invitedUserEmail: email,
+        expiresAt
+      })
+      .returning();
+
+    res.json(invite);
+  });
+
+  app.post("/api/invites/:inviteId/accept", async (req, res) => {
+    if (!req.user) return res.status(401).send("Unauthorized");
+
+    const [invite] = await db.select()
+      .from(projectInvites)
+      .where(eq(projectInvites.id, parseInt(req.params.inviteId)))
+      .limit(1);
+
+    if (!invite || invite.status !== "pending") {
+      return res.status(400).send("Invalid or expired invitation");
+    }
+
+    // Add user as project member
+    const [membership] = await db.insert(projectMembers)
+      .values({
+        projectId: invite.projectId,
+        userId: req.user.id,
+        role: "member"
+      })
+      .returning();
+
+    // Update invite status
+    await db.update(projectInvites)
+      .set({ status: "accepted" })
+      .where(eq(projectInvites.id, invite.id));
+
+    res.json(membership);
+  });
+
+  app.delete("/api/projects/:projectId/members/:memberId", async (req, res) => {
+    if (!req.user) return res.status(401).send("Unauthorized");
+    
+    // Check if user is project owner
+    const [ownership] = await db.select()
+      .from(projectMembers)
+      .where(eq(projectMembers.projectId, parseInt(req.params.projectId)))
+      .where(eq(projectMembers.userId, req.user.id))
+      .where(eq(projectMembers.role, "owner"))
+      .limit(1);
+
+    if (!ownership) {
+      return res.status(403).send("Only project owners can remove members");
+    }
+
+    await db.delete(projectMembers)
+      .where(eq(projectMembers.id, parseInt(req.params.memberId)))
+      .where(eq(projectMembers.projectId, parseInt(req.params.projectId)));
+
+    res.json({ message: "Member removed successfully" });
   });
 }

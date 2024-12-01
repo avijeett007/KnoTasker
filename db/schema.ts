@@ -71,3 +71,35 @@ export type InsertTask = z.infer<typeof insertTaskSchema>;
 
 export type Comment = z.infer<typeof selectCommentSchema>;
 export type InsertComment = z.infer<typeof insertCommentSchema>;
+
+export const projectMembers = pgTable("project_members", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  projectId: integer("project_id").references(() => projects.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  role: text("role").notNull().default("member"), // 'owner', 'admin', 'member'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const projectInvites = pgTable("project_invites", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  projectId: integer("project_id").references(() => projects.id).notNull(),
+  invitedByUserId: integer("invited_by_user_id").references(() => users.id).notNull(),
+  invitedUserEmail: text("invited_user_email").notNull(),
+  status: text("status").notNull().default("pending"), // 'pending', 'accepted', 'rejected'
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+});
+
+// Additional Zod schemas
+export const insertProjectMemberSchema = createInsertSchema(projectMembers);
+export const selectProjectMemberSchema = createSelectSchema(projectMembers);
+
+export const insertProjectInviteSchema = createInsertSchema(projectInvites);
+export const selectProjectInviteSchema = createSelectSchema(projectInvites);
+
+// Additional Types
+export type ProjectMember = z.infer<typeof selectProjectMemberSchema>;
+export type InsertProjectMember = z.infer<typeof insertProjectMemberSchema>;
+
+export type ProjectInvite = z.infer<typeof selectProjectInviteSchema>;
+export type InsertProjectInvite = z.infer<typeof insertProjectInviteSchema>;
