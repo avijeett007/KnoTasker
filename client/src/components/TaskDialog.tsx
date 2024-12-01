@@ -33,10 +33,10 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { updateTask } = useTasks(task.projectId);
+  const { updateTask } = useTasks(task.projectId ?? 0);
 
   const uploadFile = useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async (file: Blob) => {
       const formData = new FormData();
       formData.append("file", file);
       const response = await fetch(`/api/tasks/${task.id}/files`, {
@@ -231,7 +231,7 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
                       <span>Unassigned</span>
                     </div>
                   </SelectItem>
-                  {members.map((member) => (
+                  {members.map((member: { userId: number; username: string }) => (
                     <SelectItem key={member.userId} value={member.userId.toString()}>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
@@ -332,7 +332,7 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
                   <div key={comment.id} className="border rounded-lg p-3 space-y-2">
                     <p className="text-sm">{comment.content}</p>
                     <p className="text-xs text-muted-foreground">
-                      {format(new Date(comment.createdAt), "MMM d, yyyy")}
+                      {comment.createdAt && format(new Date(comment.createdAt), "MMM d, yyyy")}
                     </p>
                   </div>
                 ))

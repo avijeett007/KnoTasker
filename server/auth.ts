@@ -5,11 +5,27 @@ import session from "express-session";
 import createMemoryStore from "memorystore";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import { users, insertUserSchema, type User as SelectUser } from "@db/schema";
+import { users, type User } from "@db/schema";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
+import rateLimit from 'express-rate-limit';
+import { z } from 'zod';
 
 const scryptAsync = promisify(scrypt);
+
+// Rate limiters
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts per window per IP
+  message: 'Too many login attempts, please try again after 15 minutes'
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3, // 3 registration attempts per hour per IP
+  message: 'Too many registration attempts, please try again after an hour'
+});
+
 const crypto = {
   hash: async (password: string) => {
     const salt = randomBytes(16).toString("hex");
@@ -30,17 +46,32 @@ const crypto = {
 
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    interface User {
+      id: number;
+      username: string;
+      password: string;
+    }
   }
 }
 
+const insertUserSchema = z.object({
+  username: z.string().min(3).max(50),
+  password: z.string().min(6),
+});
+
 export function setupAuth(app: Express) {
   const MemoryStore = createMemoryStore(session);
+  const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
+  
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.REPL_ID || "task-manager-secret",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
-    cookie: {},
+    cookie: {
+      httpOnly: true,
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    },
     store: new MemoryStore({
       checkPeriod: 86400000,
     }),
@@ -49,6 +80,7 @@ export function setupAuth(app: Express) {
   if (app.get("env") === "production") {
     app.set("trust proxy", 1);
     sessionSettings.cookie = {
+      ...sessionSettings.cookie,
       secure: true,
     };
   }
@@ -97,14 +129,14 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/register", async (req, res, next) => {
+  app.post("/api/register", registerLimiter, async (req, res, next) => {
     try {
       const result = insertUserSchema.safeParse(req.body);
       if (!result.success) {
         return res
           .status(400)
           .send(
-            "Invalid input: " + result.error.issues.map((i) => i.message).join(", ")
+            "Invalid input: " + result.error.issues.map((issue: z.ZodIssue) => issue.message).join(", ")
           );
       }
 
@@ -142,7 +174,7 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", (req, res, next) => {
+  app.post("/api/login", loginLimiter, (req, res, next) => {
     passport.authenticate(
       "local",
       (err: any, user: Express.User, info: IVerifyOptions) => {
@@ -179,5 +211,13 @@ export function setupAuth(app: Express) {
       return res.json(req.user);
     }
     res.status(401).send("Not logged in");
+  });
+
+  app.get("/api/check-session", (req, res) => {
+    if (req.isAuthenticated()) {
+      res.json({ valid: true });
+    } else {
+      res.json({ valid: false });
+    }
   });
 }

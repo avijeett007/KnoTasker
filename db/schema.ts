@@ -25,11 +25,19 @@ export const projects = pgTable("projects", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const TaskStatus = {
+  TODO: "todo",
+  IN_PROGRESS: "in_progress",
+  DONE: "done",
+} as const;
+
+export type TaskStatusType = typeof TaskStatus[keyof typeof TaskStatus];
+
 export const tasks = pgTable("tasks", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   title: text("title").notNull(),
   description: text("description"),
-  status: text("status").notNull().default("todo"),
+  status: text("status", { enum: ["todo", "in_progress", "done"] as const }).notNull().default("todo"),
   projectId: integer("project_id").references(() => projects.id),
   assignedToId: integer("assigned_to_id").references(() => users.id),
   createdById: integer("created_by_id").references(() => users.id),
@@ -47,7 +55,18 @@ export const comments = pgTable("comments", {
 });
 
 // Zod schemas
-export const insertUserSchema = createInsertSchema(users);
+export const insertUserSchema = createInsertSchema(users).extend({
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
+  username: z.string()
+    .min(3, "Username must be at least 3 characters")
+    .max(30, "Username must be at most 30 characters")
+    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores")
+});
 export const selectUserSchema = createSelectSchema(users);
 
 export const insertProjectSchema = createInsertSchema(projects);
