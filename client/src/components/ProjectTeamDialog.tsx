@@ -13,7 +13,7 @@ interface ProjectTeamDialogProps {
 }
 
 export function ProjectTeamDialog({ projectId, isOpen, onClose }: ProjectTeamDialogProps) {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -26,23 +26,23 @@ export function ProjectTeamDialog({ projectId, isOpen, onClose }: ProjectTeamDia
     }
   });
   
-  const inviteMember = useMutation({
-    mutationFn: async (email: string) => {
-      const response = await fetch(`/api/projects/${projectId}/invites`, {
+  const addMember = useMutation({
+    mutationFn: async (username: string) => {
+      const response = await fetch(`/api/projects/${projectId}/members`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ username })
       });
-      if (!response.ok) throw new Error("Failed to invite member");
+      if (!response.ok) throw new Error("Failed to add member");
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["project-members", projectId] });
+      setUsername("");
       toast({
         title: "Success",
-        description: "Invitation sent successfully"
+        description: "Member added successfully"
       });
-      setEmail("");
     },
     onError: (error: Error) => {
       toast({
@@ -87,15 +87,15 @@ export function ProjectTeamDialog({ projectId, isOpen, onClose }: ProjectTeamDia
         <div className="space-y-4">
           <div className="flex gap-2">
             <Input
-              placeholder="Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
             />
             <Button 
-              onClick={() => email && inviteMember.mutate(email)}
-              disabled={inviteMember.isPending}
+              onClick={() => username && addMember.mutate(username)}
+              disabled={addMember.isPending}
             >
-              Invite
+              Add Member
             </Button>
           </div>
           

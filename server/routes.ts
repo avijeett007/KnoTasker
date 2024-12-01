@@ -1,7 +1,7 @@
 import { Express } from "express";
 import { setupAuth } from "./auth";
 import { db } from "../db";
-import { projects, tasks, comments, projectTypes, projectMembers, projectInvites, users, files } from "@db/schema";
+import { projects, tasks, comments, projectTypes, projectMembers, users, files } from "@db/schema";
 import { eq, and } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
@@ -168,85 +168,68 @@ export function registerRoutes(app: Express) {
     if (!req.user) return res.status(401).send("Unauthorized");
     
     const projectId = parseInt(req.params.projectId);
-    const isMember = await checkProjectAccess(req, projectId, "member");
-    if (!isMember) {
-      return res.status(403).send("Not a member of this project");
-    }
+    const results = await db
+      .select({
+        id: projectMembers.id,
+        userId: users.id,
+        username: users.username,
+        role: projectMembers.role,
+        createdAt: projectMembers.createdAt
+      })
+      .from(projectMembers)
+      .innerJoin(users, eq(users.id, projectMembers.userId))
+      .where(eq(projectMembers.projectId, projectId));
 
-    const projectMembers = await db.select({
-      id: projectMembers.id,
-      userId: users.id,
-      username: users.username,
-      role: projectMembers.role,
-      createdAt: projectMembers.createdAt
-    })
-    .from(projectMembers)
-    .innerJoin(users, eq(users.id, projectMembers.userId))
-    .where(eq(projectMembers.projectId, projectId));
-
-    res.json(projectMembers);
+    res.json(results);
   });
 
-  app.post("/api/projects/:projectId/invites", async (req, res) => {
+  app.post("/api/projects/:projectId/members", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
     
     const projectId = parseInt(req.params.projectId);
     const isOwner = await checkProjectAccess(req, projectId, "owner");
     if (!isOwner) {
-      return res.status(403).send("Only project owners can invite members");
+      return res.status(403).send("Only project owners can add members");
     }
 
-    const { email } = req.body;
+    const { username } = req.body;
     
-    // Create invitation
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // Expires in 7 days
+    // Find user by username
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
 
-    const [invite] = await db.insert(projectInvites)
-      .values({
-        projectId,
-        invitedByUserId: req.user.id,
-        invitedUserEmail: email,
-        expiresAt
-      })
-      .returning();
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
 
-    res.json(invite);
-  });
-
-  app.post("/api/invites/:inviteId/accept", async (req, res) => {
-    if (!req.user) return res.status(401).send("Unauthorized");
-
-    const inviteId = parseInt(req.params.inviteId);
-    const invites = await db.select()
-      .from(projectInvites)
+    // Check if already a member
+    const [existingMember] = await db
+      .select()
+      .from(projectMembers)
       .where(
         and(
-          eq(projectInvites.id, inviteId),
-          eq(projectInvites.status, "pending")
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.userId, user.id)
         )
       );
 
-    const invite = invites[0];
-    if (!invite) {
-      return res.status(400).send("Invalid or expired invitation");
+    if (existingMember) {
+      return res.status(400).send("User is already a member of this project");
     }
 
     // Add user as project member
-    const [membership] = await db.insert(projectMembers)
+    const [member] = await db
+      .insert(projectMembers)
       .values({
-        projectId: invite.projectId,
-        userId: req.user.id,
+        projectId,
+        userId: user.id,
         role: "member"
       })
       .returning();
 
-    // Update invite status
-    await db.update(projectInvites)
-      .set({ status: "accepted" })
-      .where(eq(projectInvites.id, invite.id));
-
-    res.json(membership);
+    res.json(member);
   });
 
   app.delete("/api/projects/:projectId/members/:memberId", async (req, res) => {
