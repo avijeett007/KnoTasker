@@ -17,38 +17,37 @@ interface ProjectBoardProps {
 export function ProjectBoard({ projectId }: ProjectBoardProps) {
   const { tasks, updateTask } = useTasks(projectId);
 
+  const sanitizeStatus = (status: string) => status.replace('-', '_');
   const getTasksByStatus = (status: string) =>
-    tasks?.filter((task) => task.status === status).sort((a, b) => a.order - b.order) || [];
+    tasks?.filter((task) => sanitizeStatus(task.status) === status)
+      .sort((a, b) => a.order - b.order) || [];
 
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
-
-    const task = tasks?.find((t) => t.id.toString() === result.draggableId);
-    if (!task) return;
-
-    const newStatus = result.destination.droppableId;
-    const sourceIndex = result.source.index;
+  const calculateNewOrder = (result: any, getTasksByStatus: (status: string) => any[]) => {
     const destIndex = result.destination.index;
-
-    // Calculate new order
-    const tasksInNewStatus = getTasksByStatus(newStatus);
-    let newOrder = 0;
+    const tasksInNewStatus = getTasksByStatus(result.destination.droppableId);
     
     if (destIndex === 0) {
-      newOrder = (tasksInNewStatus[0]?.order ?? 0) - 1000;
+      return (tasksInNewStatus[0]?.order ?? 0) - 1000;
     } else if (destIndex === tasksInNewStatus.length) {
-      newOrder = (tasksInNewStatus[tasksInNewStatus.length - 1]?.order ?? 0) + 1000;
+      return (tasksInNewStatus[tasksInNewStatus.length - 1]?.order ?? 0) + 1000;
     } else {
       const prevTask = tasksInNewStatus[destIndex - 1];
       const nextTask = tasksInNewStatus[destIndex];
-      newOrder = (prevTask.order + nextTask.order) / 2;
+      return (prevTask.order + nextTask.order) / 2;
     }
+  };
 
+  const handleDragEnd = (result: any) => {
+    if (!result.destination) return;
+    
+    const task = tasks?.find((t) => t.id === parseInt(result.draggableId));
+    if (!task) return;
+    
     updateTask({
       taskId: task.id,
       updates: {
-        status: newStatus,
-        order: newOrder,
+        status: result.destination.droppableId.replace('_', '-'),
+        order: calculateNewOrder(result, getTasksByStatus),
       },
     });
   };
