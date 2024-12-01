@@ -257,18 +257,55 @@ export function registerRoutes(app: Express) {
     if (!req.user) return res.status(401).send("Unauthorized");
     if (!req.file) return res.status(400).send("No file uploaded");
 
-    const [file] = await db.insert(files)
-      .values({
-        taskId: parseInt(req.params.taskId),
-        filename: req.file.filename,
-        originalName: req.file.originalname,
-        mimeType: req.file.mimetype,
-        size: req.file.size,
-        uploadedById: req.user.id,
-      })
-      .returning();
+    const taskId = parseInt(req.params.taskId);
+    
+    // Check if task exists and user has access
+    const [task] = await db.select()
+      .from(tasks)
+      .where(eq(tasks.id, taskId));
+    
+    if (!task) return res.status(404).send("Task not found");
+    
+    const hasAccess = await checkProjectAccess(req, task.projectId, "member");
+    if (!hasAccess) return res.status(403).send("Insufficient permissions");
 
-    res.json(file);
+    // Check file size (5MB limit)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    if (req.file.size > MAX_FILE_SIZE) {
+      fs.unlinkSync(req.file.path); // Clean up
+      return res.status(400).send("File size exceeds 5MB limit");
+    }
+
+    // Check file type
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif',
+      'application/pdf', 'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
+    ];
+    
+    if (!allowedTypes.includes(req.file.mimetype)) {
+      fs.unlinkSync(req.file.path); // Clean up
+      return res.status(400).send("File type not supported");
+    }
+
+    try {
+      const [file] = await db.insert(files)
+        .values({
+          taskId,
+          filename: req.file.filename,
+          originalName: req.file.originalname,
+          mimeType: req.file.mimetype,
+          size: req.file.size,
+          uploadedById: req.user.id,
+        })
+        .returning();
+
+      res.json(file);
+    } catch (error) {
+      fs.unlinkSync(req.file.path); // Clean up on error
+      throw error;
+    }
   });
 
   app.get("/api/tasks/:taskId/files", async (req, res) => {
