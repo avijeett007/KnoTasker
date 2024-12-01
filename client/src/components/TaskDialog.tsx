@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { Input } from "./ui/input";
@@ -11,6 +11,7 @@ import { Task } from "@db/schema";
 import { useTasks } from "../hooks/use-tasks";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface TaskDialogProps {
   task: Task;
@@ -29,6 +30,43 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
   const { updateTask } = useTasks(task.projectId!);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: comments = [] } = useQuery({
+    queryKey: ["comments", task.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/tasks/${task.id}/comments`);
+      if (!response.ok) throw new Error("Failed to fetch comments");
+      return response.json();
+    },
+  });
+
+  const addComment = useMutation({
+    mutationFn: async (content: string) => {
+      const response = await fetch(`/api/tasks/${task.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!response.ok) throw new Error("Failed to add comment");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments", task.id] });
+      setComment("");
+      toast({
+        title: "Success",
+        description: "Comment added successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add comment",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSave = async () => {
     if (!editedTask.title.trim()) {
@@ -51,14 +89,13 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
         },
       });
       
-      if (result) {
-        setEditedTask(result);
-        setIsEditing(false);
-        toast({
-          title: "Success",
-          description: "Task updated successfully",
-        });
-      }
+      setEditedTask(result);
+      setIsEditing(false);
+      toast({
+        title: "Success",
+        description: "Task updated successfully",
+      });
+      onClose(); // Close the dialog after successful update
     } catch (error) {
       toast({
         title: "Error",
@@ -165,14 +202,30 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Write a comment..."
                 rows={2}
-                disabled
               />
-              <Button disabled>
-                Comments coming soon
+              <Button 
+                onClick={() => comment.trim() && addComment.mutate(comment.trim())}
+                disabled={addComment.isPending || !comment.trim()}
+              >
+                {addComment.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Add Comment
               </Button>
             </div>
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">No comments yet</p>
+              {comments.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No comments yet</p>
+              ) : (
+                comments.map((comment) => (
+                  <div key={comment.id} className="border rounded-lg p-3 space-y-2">
+                    <p className="text-sm">{comment.content}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(comment.createdAt), "MMM d, yyyy")}
+                    </p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
