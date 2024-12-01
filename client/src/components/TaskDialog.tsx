@@ -209,9 +209,9 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
             <div className="space-y-2">
               <Label>Assignee</Label>
               <Select
-                value={editedTask.assignedToId?.toString() || ""}
+                value={editedTask.assignedToId?.toString() ?? "unassigned"}
                 onValueChange={(value) => {
-                  const assignedToId = value ? parseInt(value) : null;
+                  const assignedToId = value === "unassigned" ? null : parseInt(value);
                   setEditedTask({ ...editedTask, assignedToId });
                   if (!isEditing) {
                     updateTask({ 
@@ -225,7 +225,7 @@ export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
                   <SelectValue placeholder="Unassigned" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">
+                  <SelectItem value="unassigned">
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4" />
                       <span>Unassigned</span>

@@ -2,7 +2,7 @@ import { Express } from "express";
 import { setupAuth } from "./auth";
 import { db } from "../db";
 import { projects, tasks, comments, projectTypes, projectMembers, projectInvites, users, files } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -17,7 +17,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Create uploads directory if it doesn't exist
 if (!fs.existsSync("./uploads")) {
   fs.mkdirSync("./uploads");
 }
@@ -29,17 +28,20 @@ async function checkProjectAccess(
 ) {
   if (!req.user) return false;
   
-  const [member] = await db.select()
+  const members = await db.select()
     .from(projectMembers)
-    .where(eq(projectMembers.projectId, projectId))
-    .where(eq(projectMembers.userId, req.user.id));
+    .where(and(
+      eq(projectMembers.projectId, projectId),
+      eq(projectMembers.userId, req.user.id)
+    ));
 
+  const member = members[0];
   if (!member) return false;
   
   if (requiredRole) {
     if (requiredRole === "owner") return member.role === "owner";
     if (requiredRole === "admin") return ["owner", "admin"].includes(member.role);
-    return true; // member role can do basic operations
+    return true;
   }
   
   return true;
@@ -87,23 +89,23 @@ export function registerRoutes(app: Express) {
 
   app.get("/api/projects/:id", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
-    const project = await db.select().from(projects)
-      .where(eq(projects.id, parseInt(req.params.id)))
-      .limit(1);
+    const projectResults = await db.select()
+      .from(projects)
+      .where(eq(projects.id, parseInt(req.params.id)));
     
-    if (!project.length) {
+    if (!projectResults.length) {
       return res.status(404).send("Project not found");
     }
     
-    res.json(project[0]);
+    res.json(projectResults[0]);
   });
 
   // Tasks
   app.get("/api/projects/:projectId/tasks", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
-    const projectTasks = await db.select().from(tasks)
-      .where(eq(tasks.projectId, parseInt(req.params.projectId)))
-      .orderBy(tasks.order);
+    const projectTasks = await db.select()
+      .from(tasks)
+      .where(eq(tasks.projectId, parseInt(req.params.projectId)));
     res.json(projectTasks);
   });
 
@@ -130,12 +132,12 @@ export function registerRoutes(app: Express) {
   app.patch("/api/tasks/:taskId", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
     
-    const [task] = await db.select()
+    const taskResults = await db.select()
       .from(tasks)
-      .where(eq(tasks.id, parseInt(req.params.taskId)))
-      .limit(1);
+      .where(eq(tasks.id, parseInt(req.params.taskId)));
       
-    if (!task) return res.status(404).send("Task not found");
+    if (!taskResults.length) return res.status(404).send("Task not found");
+    const task = taskResults[0];
     
     const hasAccess = await checkProjectAccess(req, task.projectId, "member");
     if (!hasAccess) return res.status(403).send("Insufficient permissions");
@@ -155,43 +157,23 @@ export function registerRoutes(app: Express) {
     res.json(updatedTask);
   });
 
-  // Comments
-  app.get("/api/tasks/:taskId/comments", async (req, res) => {
-    if (!req.user) return res.status(401).send("Unauthorized");
-    const taskComments = await db.select().from(comments)
-      .where(eq(comments.taskId, parseInt(req.params.taskId)));
-    res.json(taskComments);
-  });
-
-  app.post("/api/tasks/:taskId/comments", async (req, res) => {
-    if (!req.user) return res.status(401).send("Unauthorized");
-    const { content } = req.body;
-    const [comment] = await db.insert(comments)
-      .values({
-        content,
-        taskId: parseInt(req.params.taskId),
-        createdById: req.user.id,
-      })
-      .returning();
-    res.json(comment);
-  });
-
   // Project Members and Collaboration
   app.get("/api/projects/:projectId/members", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
     
     // Check if user is a member of the project
-    const [membership] = await db.select()
+    const members = await db.select()
       .from(projectMembers)
-      .where(eq(projectMembers.projectId, parseInt(req.params.projectId)))
-      .where(eq(projectMembers.userId, req.user.id))
-      .limit(1);
+      .where(and(
+        eq(projectMembers.projectId, parseInt(req.params.projectId)),
+        eq(projectMembers.userId, req.user.id)
+      ));
 
-    if (!membership) {
+    if (!members.length) {
       return res.status(403).send("Not a member of this project");
     }
 
-    const members = await db.select({
+    const projectMembers = await db.select({
       id: projectMembers.id,
       userId: users.id,
       username: users.username,
@@ -202,21 +184,22 @@ export function registerRoutes(app: Express) {
     .innerJoin(users, eq(users.id, projectMembers.userId))
     .where(eq(projectMembers.projectId, parseInt(req.params.projectId)));
 
-    res.json(members);
+    res.json(projectMembers);
   });
 
   app.post("/api/projects/:projectId/invites", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
     
     // Check if user has permission to invite
-    const [membership] = await db.select()
+    const members = await db.select()
       .from(projectMembers)
-      .where(eq(projectMembers.projectId, parseInt(req.params.projectId)))
-      .where(eq(projectMembers.userId, req.user.id))
-      .where(eq(projectMembers.role, "owner"))
-      .limit(1);
+      .where(and(
+        eq(projectMembers.projectId, parseInt(req.params.projectId)),
+        eq(projectMembers.userId, req.user.id),
+        eq(projectMembers.role, "owner")
+      ));
 
-    if (!membership) {
+    if (!members.length) {
       return res.status(403).send("Only project owners can invite members");
     }
 
@@ -241,11 +224,11 @@ export function registerRoutes(app: Express) {
   app.post("/api/invites/:inviteId/accept", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
 
-    const [invite] = await db.select()
+    const invites = await db.select()
       .from(projectInvites)
-      .where(eq(projectInvites.id, parseInt(req.params.inviteId)))
-      .limit(1);
+      .where(eq(projectInvites.id, parseInt(req.params.inviteId)));
 
+    const invite = invites[0];
     if (!invite || invite.status !== "pending") {
       return res.status(400).send("Invalid or expired invitation");
     }
@@ -271,25 +254,28 @@ export function registerRoutes(app: Express) {
     if (!req.user) return res.status(401).send("Unauthorized");
     
     // Check if user is project owner
-    const [ownership] = await db.select()
+    const owners = await db.select()
       .from(projectMembers)
-      .where(eq(projectMembers.projectId, parseInt(req.params.projectId)))
-      .where(eq(projectMembers.userId, req.user.id))
-      .where(eq(projectMembers.role, "owner"))
-      .limit(1);
+      .where(and(
+        eq(projectMembers.projectId, parseInt(req.params.projectId)),
+        eq(projectMembers.userId, req.user.id),
+        eq(projectMembers.role, "owner")
+      ));
 
-    if (!ownership) {
+    if (!owners.length) {
       return res.status(403).send("Only project owners can remove members");
     }
 
     await db.delete(projectMembers)
-      .where(eq(projectMembers.id, parseInt(req.params.memberId)))
-      .where(eq(projectMembers.projectId, parseInt(req.params.projectId)));
+      .where(and(
+        eq(projectMembers.id, parseInt(req.params.memberId)),
+        eq(projectMembers.projectId, parseInt(req.params.projectId))
+      ));
 
     res.json({ message: "Member removed successfully" });
   });
 
-  // File Upload Routes
+  // Files
   app.post("/api/tasks/:taskId/files", upload.single("file"), async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
     if (!req.file) return res.status(400).send("No file uploaded");
@@ -311,7 +297,8 @@ export function registerRoutes(app: Express) {
   app.get("/api/tasks/:taskId/files", async (req, res) => {
     if (!req.user) return res.status(401).send("Unauthorized");
     
-    const taskFiles = await db.select().from(files)
+    const taskFiles = await db.select()
+      .from(files)
       .where(eq(files.taskId, parseInt(req.params.taskId)));
     
     res.json(taskFiles);
