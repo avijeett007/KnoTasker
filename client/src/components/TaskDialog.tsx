@@ -21,11 +21,33 @@ interface TaskDialogProps {
 
 export function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTask, setEditedTask] = useState<Task>({
-    ...task,
+  const [editedTask, setEditedTask] = useState<Task>(() => ({
+    id: task.id,
+    title: task.title,
+    description: task.description || "",
     status: task.status || "todo",
-    description: task.description || null,
-  });
+    projectId: task.projectId,
+    assignedToId: task.assignedToId,
+    createdById: task.createdById,
+    createdAt: task.createdAt,
+    updatedAt: task.updatedAt,
+    order: task.order
+  }));
+
+  useEffect(() => {
+    setEditedTask({
+      id: task.id,
+      title: task.title,
+      description: task.description || "",
+      status: task.status || "todo",
+      projectId: task.projectId,
+      assignedToId: task.assignedToId,
+      createdById: task.createdById,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+      order: task.order
+    });
+  }, [task]);
   const [comment, setComment] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const { updateTask } = useTasks(task.projectId!);
