@@ -4,7 +4,7 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  username: text("username").unique().notNull(),
+  email: text("email").unique().notNull(),
   password: text("password").notNull(),
 });
 
@@ -47,7 +47,9 @@ export const comments = pgTable("comments", {
 });
 
 // Zod schemas
-export const insertUserSchema = createInsertSchema(users);
+export const insertUserSchema = createInsertSchema(users).extend({
+  email: z.string().email("Please enter a valid email address"),
+});
 export const selectUserSchema = createSelectSchema(users);
 
 export const insertProjectSchema = createInsertSchema(projects);

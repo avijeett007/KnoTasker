@@ -87,7 +87,8 @@ export function ProjectTeamDialog({ projectId, isOpen, onClose }: ProjectTeamDia
         <div className="space-y-4">
           <div className="flex gap-2">
             <Input
-              placeholder="Username"
+              placeholder="Email address"
+              type="email"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
