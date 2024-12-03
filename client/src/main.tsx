@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Route, Router, Switch } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "@/components/theme-provider";
 import { LandingPage } from "@/pages/LandingPage";
 import { AuthPage } from "@/pages/AuthPage";
 import { ProjectListPage } from "@/pages/ProjectListPage";
@@ -46,36 +47,38 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <Switch>
-          <Route path="/">
-            <PublicRoute>
-              <LandingPage />
-            </PublicRoute>
-          </Route>
-          <Route path="/auth">
-            <PublicRoute>
-              <AuthPage />
-            </PublicRoute>
-          </Route>
-          <Route path="/projects">
-            <ProtectedRoute>
-              <ProjectListPage />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/project/new">
-            <ProtectedRoute>
-              <NewProjectPage />
-            </ProtectedRoute>
-          </Route>
-          <Route path="/project/:id">
-            <ProtectedRoute>
-              <ProjectPage />
-            </ProtectedRoute>
-          </Route>
-        </Switch>
-      </Router>
-      <Toaster />
+      <ThemeProvider defaultTheme="system" storageKey="knotasker-theme">
+        <Router>
+          <Switch>
+            <Route path="/">
+              <PublicRoute>
+                <LandingPage />
+              </PublicRoute>
+            </Route>
+            <Route path="/auth">
+              <PublicRoute>
+                <AuthPage />
+              </PublicRoute>
+            </Route>
+            <Route path="/projects">
+              <ProtectedRoute>
+                <ProjectListPage />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/project/new">
+              <ProtectedRoute>
+                <NewProjectPage />
+              </ProtectedRoute>
+            </Route>
+            <Route path="/project/:id">
+              <ProtectedRoute>
+                <ProjectPage />
+              </ProtectedRoute>
+            </Route>
+          </Switch>
+        </Router>
+        <Toaster />
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

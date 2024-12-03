@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Plus, MoreVertical, Users } from "lucide-react";
 import { ProjectTeamDialog } from "./ProjectTeamDialog";
+import { AITaskGeneratorDialog } from "./AITaskGeneratorDialog";
 import {
   Dialog,
   DialogContent,
@@ -32,16 +33,17 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   const [newTaskDescription, setNewTaskDescription] = useState("");
   const { createTask } = useTasks(project.id);
 
-  const handleCreateTask = () => {
-    createTask({
+  const handleCreateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await createTask({
       title: newTaskTitle,
       description: newTaskDescription,
       status: TaskStatus.TODO,
       order: 0,
     });
-    setIsNewTaskDialogOpen(false);
     setNewTaskTitle("");
     setNewTaskDescription("");
+    setIsNewTaskDialogOpen(false);
   };
 
   return (
@@ -57,6 +59,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
           <p className="text-sm opacity-90">{project.description}</p>
         </div>
         <div className="flex gap-2">
+          <AITaskGeneratorDialog projectId={project.id} />
           <Button variant="secondary" onClick={() => setIsTeamDialogOpen(true)} className="mr-2">
             <Users className="h-4 w-4 mr-2" />
             Team
@@ -72,7 +75,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
               <DialogHeader>
                 <DialogTitle>Create New Task</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              <form onSubmit={handleCreateTask} className="space-y-4">
                 <Input
                   placeholder="Task title"
                   value={newTaskTitle}
@@ -83,8 +86,12 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                   value={newTaskDescription}
                   onChange={(e) => setNewTaskDescription(e.target.value)}
                 />
-                <Button onClick={handleCreateTask}>Create Task</Button>
-              </div>
+                <div className="flex justify-end">
+                  <Button type="submit" disabled={!newTaskTitle}>
+                    Create Task
+                  </Button>
+                </div>
+              </form>
             </DialogContent>
           </Dialog>
           <DropdownMenu>

@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useLocation } from "wouter";
 
 export function LandingPage() {
@@ -8,67 +9,67 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/80 flex flex-col">
-      <nav className="container mx-auto p-4">
+      <nav className="container mx-auto p-4 flex justify-between items-center">
         <Logo size="md" />
+        <ThemeToggle />
       </nav>
       
       <main className="flex-1 container mx-auto flex flex-col items-center justify-center gap-8 p-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center space-y-4"
-        >
-          <Logo size="lg" className="justify-center" />
-          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 text-transparent bg-clip-text">
-            Organize Your Tasks,<br />Unlock Your Potential
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Transform your ideas into actionable tasks. KnoTasker helps you manage projects
-            with an intuitive Kanban board system designed for maximum productivity.
-          </p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.6 }}
-          className="space-x-4"
-        >
-          <Button
-            size="lg"
-            className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600"
-            onClick={() => setLocation("/auth")}
+        <div className="grid md:grid-cols-2 gap-8 items-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center md:text-left space-y-4"
           >
-            Get Started
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            onClick={() => {
-              const demoSection = document.getElementById("demo");
-              demoSection?.scrollIntoView({ behavior: "smooth" });
-            }}
+            <Logo size="lg" className="justify-center md:justify-start" />
+            <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 text-transparent bg-clip-text">
+              Organize Your Tasks,<br />Unlock Your Potential
+            </h1>
+            <p className="text-xl text-muted-foreground">
+              Transform your ideas into actionable tasks. KnoTasker helps you manage projects
+              with an intuitive Kanban board system designed for maximum productivity.
+            </p>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="space-x-4 pt-4"
+            >
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600"
+                onClick={() => setLocation("/auth")}
+              >
+                Get Started
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => {
+                  const demoSection = document.getElementById("demo");
+                  demoSection?.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                See How It Works
+              </Button>
+            </motion.div>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+            className="hidden md:block relative"
           >
-            See How It Works
-          </Button>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.8 }}
-          className="relative w-full max-w-5xl mt-8"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/30 to-blue-500/30 rounded-lg blur-xl"></div>
-          <div className="relative bg-card rounded-lg border shadow-2xl overflow-hidden">
-            <img
-              src="/demo-board.png"
-              alt="KnoTasker Demo"
-              className="w-full h-auto"
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-500/20 rounded-lg blur-xl -z-10"></div>
+            <img 
+              src="/images/hero.svg" 
+              alt="Task Management" 
+              className="w-full h-auto rounded-lg shadow-xl" 
             />
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </main>
 
       <section id="demo" className="container mx-auto py-20 space-y-12">
@@ -91,11 +92,9 @@ export function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.2, duration: 0.6 }}
-              className="bg-card rounded-lg p-6 border"
+              className="bg-card rounded-lg p-6 border hover:shadow-lg transition-shadow"
             >
-              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-blue-500 flex items-center justify-center mb-4">
-                {feature.icon}
-              </div>
+              <img src={feature.icon} alt={feature.title} className="w-12 h-12 mb-4" />
               <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
               <p className="text-muted-foreground">{feature.description}</p>
             </motion.div>
@@ -115,60 +114,18 @@ export function LandingPage() {
 
 const features = [
   {
-    title: "Project Templates",
+    title: "Work Projects",
     description: "Start quickly with pre-built project templates or create your own custom workflow.",
-    icon: (
-      <svg
-        className="w-6 h-6 text-white"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-        />
-      </svg>
-    ),
+    icon: "/images/work.svg"
   },
   {
-    title: "Kanban Boards",
-    description: "Visualize your workflow with customizable Kanban boards that keep your team aligned.",
-    icon: (
-      <svg
-        className="w-6 h-6 text-white"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-        />
-      </svg>
-    ),
+    title: "Education Tasks",
+    description: "Organize your study materials and assignments with our education-focused templates.",
+    icon: "/images/education.svg"
   },
   {
-    title: "Real-time Updates",
-    description: "Stay in sync with your team through real-time updates and notifications.",
-    icon: (
-      <svg
-        className="w-6 h-6 text-white"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M13 10V3L4 14h7v7l9-11h-7z"
-        />
-      </svg>
-    ),
-  },
+    title: "Personal Goals",
+    description: "Track your personal goals and daily tasks with our intuitive interface.",
+    icon: "/images/personal.svg"
+  }
 ];
